@@ -64,15 +64,16 @@ describe('deployed IK WASM ABI', () => {
       m.HEAPF64.set(target, pointers[1] / 8);
       duration = m._deploy_trajectory_duration(pointers[0], pointers[1], 500);
     });
-    // J2 velocity limit 0.8 rad/s requires 1.875 seconds for 0.8 rad.
-    expect(duration).toBeCloseTo(1875, 2);
+    // Doubled J2 acceleration limit (4 rad/s^2) is the active constraint.
+    const expectedDuration = Math.sqrt((10 / Math.sqrt(3)) * .8 / 4) * 1000;
+    expect(duration).toBeCloseTo(expectedDuration, 2);
     const [position, velocity] = memory(m, [7, 7, 7, 7], pointers => {
       m.HEAPF64.set(start, pointers[0] / 8);
       m.HEAPF64.set(target, pointers[1] / 8);
       expect(m._deploy_trajectory_sample(pointers[0], pointers[1], duration, duration / 2, pointers[2], pointers[3])).toBe(1);
     }).slice(2);
     expect(position[1]).toBeCloseTo(.4, 6);
-    expect(velocity[1]).toBeCloseTo(.8, 6);
+    expect(velocity[1]).toBeCloseTo(1.875 * .8 / (duration / 1000), 6);
     const [endPosition, endVelocity] = memory(m, [7, 7, 7, 7], pointers => {
       m.HEAPF64.set(start, pointers[0] / 8);
       m.HEAPF64.set(target, pointers[1] / 8);

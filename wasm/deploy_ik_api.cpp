@@ -141,11 +141,11 @@ WEB_EXPORT double deploy_trajectory_duration(const double* startRad,
         start[i] = static_cast<float>(startRad[i]);
         target[i] = static_cast<float>(targetRad[i]);
     }
-    constexpr float speedMax[7] = {2.0f, 0.8f, 0.8f, 2.0f, 2.0f, 2.0f, 2.0f};
-    constexpr float accelerationMax[7] = {4.0f, 2.0f, 2.0f, 4.0f, 4.0f, 4.0f, 4.0f};
     const float durationSec = trajectory_planner_kernel::synchronizedDurationSeconds(
         start, target, 7, static_cast<float>(requestedDurationMs) * 0.001f,
-        speedMax, accelerationMax, 0.5f, 8.0f, 0.00001f);
+        trajectory_planner_kernel::kDefaultSpeedMaxRadPerSec,
+        trajectory_planner_kernel::kDefaultAccelerationMaxRadPerSec2,
+        0.5f, 8.0f, 0.00001f);
     return static_cast<double>(durationSec) * 1000.0;
 }
 

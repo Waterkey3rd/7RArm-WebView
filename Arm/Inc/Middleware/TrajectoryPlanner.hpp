@@ -55,13 +55,13 @@ class TrajectoryPlanner {
 	struct PlannerConfig {
 		// 各关节最大速度，单位 rad/s。
 		units::angular_velocity::radians_per_second_t speedMax[kJointCount] = {
-			2.0_rad_per_s,
-			0.8_rad_per_s,
-			0.8_rad_per_s,
-			2.0_rad_per_s,
-			2.0_rad_per_s,
-			2.0_rad_per_s,
-			2.0_rad_per_s,
+			units::angular_velocity::radians_per_second_t(trajectory_planner_kernel::kDefaultSpeedMaxRadPerSec[0]),
+			units::angular_velocity::radians_per_second_t(trajectory_planner_kernel::kDefaultSpeedMaxRadPerSec[1]),
+			units::angular_velocity::radians_per_second_t(trajectory_planner_kernel::kDefaultSpeedMaxRadPerSec[2]),
+			units::angular_velocity::radians_per_second_t(trajectory_planner_kernel::kDefaultSpeedMaxRadPerSec[3]),
+			units::angular_velocity::radians_per_second_t(trajectory_planner_kernel::kDefaultSpeedMaxRadPerSec[4]),
+			units::angular_velocity::radians_per_second_t(trajectory_planner_kernel::kDefaultSpeedMaxRadPerSec[5]),
+			units::angular_velocity::radians_per_second_t(trajectory_planner_kernel::kDefaultSpeedMaxRadPerSec[6]),
 		};
 
 		// 上层请求 duration 的软上下界。
@@ -87,13 +87,13 @@ class TrajectoryPlanner {
 		// 使用 float 是为了避免额外依赖特定 units 库中的角加速度类型/字面量名称。
 		// 该字段追加在 PlannerConfig 尾部，尽量兼容已有聚合初始化代码。
 		float accelerationMax[kJointCount] = {
-			4.0f,
-			2.0f,
-			2.0f,
-			4.0f,
-			4.0f,
-			4.0f,
-			4.0f,
+			trajectory_planner_kernel::kDefaultAccelerationMaxRadPerSec2[0],
+			trajectory_planner_kernel::kDefaultAccelerationMaxRadPerSec2[1],
+			trajectory_planner_kernel::kDefaultAccelerationMaxRadPerSec2[2],
+			trajectory_planner_kernel::kDefaultAccelerationMaxRadPerSec2[3],
+			trajectory_planner_kernel::kDefaultAccelerationMaxRadPerSec2[4],
+			trajectory_planner_kernel::kDefaultAccelerationMaxRadPerSec2[5],
+			trajectory_planner_kernel::kDefaultAccelerationMaxRadPerSec2[6],
 		};
 	};
 

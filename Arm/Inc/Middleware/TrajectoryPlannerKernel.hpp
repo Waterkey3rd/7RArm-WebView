@@ -11,6 +11,15 @@ inline constexpr float kPeakVelocityFactor = 1.875f;
 inline constexpr float kPeakAccelerationFactor = 5.773502691896258f;  // 10/sqrt(3)
 inline constexpr float kEpsilon = 1.0e-6f;
 
+// Default limits shared verbatim by the firmware planner and browser WASM.
+// These are twice the original deployment limits.
+inline constexpr float kDefaultSpeedMaxRadPerSec[7] = {
+    4.0f, 1.6f, 1.6f, 4.0f, 4.0f, 4.0f, 4.0f,
+};
+inline constexpr float kDefaultAccelerationMaxRadPerSec2[7] = {
+    8.0f, 4.0f, 4.0f, 8.0f, 8.0f, 8.0f, 8.0f,
+};
+
 inline float clampRequestedDuration(float requestedSec, float minDurationSec,
                                     float maxDurationSec, float guardSec) {
     float duration = requestedSec;

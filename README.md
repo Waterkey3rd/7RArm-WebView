@@ -26,6 +26,7 @@ Web 交互 UI（Light Studio 控制台）
 Web 视图的关键点过渡也不再使用 JavaScript `smoothstep`。固件
 `TrajectoryPlanner.hpp` 与 WASM 共用 `TrajectoryPlannerKernel.hpp`：采用零起终
 速度、零起终加速度的五次多项式，并按实机每关节速度/加速度上限计算统一时间。
+当前默认速度和加速度上限均为原始部署值的 2 倍，固件和 WASM 直接读取共享常量。
 左右臂像实机一样分别规划；一侧先完成时保持目标，视图等待另一侧完成。时间轴在
 发生限速延长时显示“请求时长 → 实机规划后时长”。
 

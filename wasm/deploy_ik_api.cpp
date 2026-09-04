@@ -1,5 +1,6 @@
 #define ROBOARM7R_SCALAR float
 #include "../deploy_arm_model.hpp"
+#include "../Arm/Inc/Middleware/TrajectoryPlannerKernel.hpp"
 
 #include <cstdint>
 
@@ -126,3 +127,47 @@ WEB_EXPORT int deploy_get_joint_limits(int side, double* lower, double* upper) {
 }
 
 WEB_EXPORT int deploy_model_version() { return 1; }
+
+// Browser visualizer version of Arm/Inc/Middleware/TrajectoryPlanner.hpp.
+// Each arm has its own seven-joint synchronized duration, like the two
+// firmware TrajectoryPlanner instances. Inputs/outputs use rad and ms.
+WEB_EXPORT double deploy_trajectory_duration(const double* startRad,
+                                              const double* targetRad,
+                                              double requestedDurationMs) {
+    if (!startRad || !targetRad || !std::isfinite(requestedDurationMs)) return 0.0;
+    float start[7]{};
+    float target[7]{};
+    for (int i = 0; i < 7; ++i) {
+        start[i] = static_cast<float>(startRad[i]);
+        target[i] = static_cast<float>(targetRad[i]);
+    }
+    constexpr float speedMax[7] = {2.0f, 0.8f, 0.8f, 2.0f, 2.0f, 2.0f, 2.0f};
+    constexpr float accelerationMax[7] = {4.0f, 2.0f, 2.0f, 4.0f, 4.0f, 4.0f, 4.0f};
+    const float durationSec = trajectory_planner_kernel::synchronizedDurationSeconds(
+        start, target, 7, static_cast<float>(requestedDurationMs) * 0.001f,
+        speedMax, accelerationMax, 0.5f, 8.0f, 0.00001f);
+    return static_cast<double>(durationSec) * 1000.0;
+}
+
+WEB_EXPORT int deploy_trajectory_sample(const double* startRad,
+                                        const double* targetRad,
+                                        double durationMs, double elapsedMs,
+                                        double* positionRad,
+                                        double* velocityRadPerSec) {
+    if (!startRad || !targetRad || !positionRad || !velocityRadPerSec
+        || !std::isfinite(durationMs) || !std::isfinite(elapsedMs)) return 0;
+    const float durationSec = static_cast<float>(durationMs) * 0.001f;
+    const float elapsedSec = static_cast<float>(elapsedMs) * 0.001f;
+    const float normalizedTime = durationSec > trajectory_planner_kernel::kEpsilon
+        ? elapsedSec / durationSec : 1.0f;
+    const float normalizedVelocity = trajectory_planner_kernel::normalizedVelocity(normalizedTime);
+    for (int i = 0; i < 7; ++i) {
+        const float start = static_cast<float>(startRad[i]);
+        const float target = static_cast<float>(targetRad[i]);
+        positionRad[i] = trajectory_planner_kernel::samplePosition(
+            start, target, elapsedSec, durationSec);
+        velocityRadPerSec[i] = durationSec > trajectory_planner_kernel::kEpsilon
+            ? (target - start) / durationSec * normalizedVelocity : 0.0;
+    }
+    return 1;
+}

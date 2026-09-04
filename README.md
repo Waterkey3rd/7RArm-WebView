@@ -23,6 +23,12 @@ Web 交互 UI（Light Studio 控制台）
 
 浏览器中没有 MuJoCo、动力学、Python 后端、数据库或 WebSocket。IK/FK 和关节链位置全部来自同一份 C++ 实机算法；TypeScript 不重复实现运动学。
 
+Web 视图的关键点过渡也不再使用 JavaScript `smoothstep`。固件
+`TrajectoryPlanner.hpp` 与 WASM 共用 `TrajectoryPlannerKernel.hpp`：采用零起终
+速度、零起终加速度的五次多项式，并按实机每关节速度/加速度上限计算统一时间。
+左右臂像实机一样分别规划；一侧先完成时保持目标，视图等待另一侧完成。时间轴在
+发生限速延长时显示“请求时长 → 实机规划后时长”。
+
 ### 构建与运行
 
 在项目根目录构建 WASM：

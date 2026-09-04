@@ -9,6 +9,8 @@ interface EmscriptenModule {
   _deploy_fk_chain(side: number, q: number, positions: number, axes: number): number;
   _deploy_get_joint_limits(side: number, lower: number, upper: number): number;
   _deploy_model_version(): number;
+  _deploy_trajectory_duration(start: number, target: number, requestedDurationMs: number): number;
+  _deploy_trajectory_sample(start: number, target: number, durationMs: number, elapsedMs: number, position: number, velocity: number): number;
 }
 
 type ModuleFactory = (options?: Record<string, unknown>) => Promise<EmscriptenModule>;
@@ -41,6 +43,7 @@ export interface IkResult {
 
 export interface FkResult { rotation: number[]; position: number[] }
 export interface ChainResult { positions: number[][]; axes: number[][] }
+export interface TrajectorySample { position: number[]; velocity: number[] }
 
 export class DeployIK {
   private constructor(private readonly module: EmscriptenModule) {}
@@ -116,5 +119,29 @@ export class DeployIK {
       if (!this.module._deploy_get_joint_limits(sideIndex(side), pointers[0], pointers[1])) throw new Error('关节限位读取失败');
     });
     return { lower, upper };
+  }
+
+  trajectoryDuration(start: number[], target: number[], requestedDurationMs: number): number {
+    if (start.length !== 7 || target.length !== 7) throw new Error('速度规划需要 7 个起止关节角');
+    let duration = 0;
+    this.arrays([7, 7], pointers => {
+      this.module.HEAPF64.set(start, pointers[0] / 8);
+      this.module.HEAPF64.set(target, pointers[1] / 8);
+      duration = this.module._deploy_trajectory_duration(pointers[0], pointers[1], requestedDurationMs);
+    });
+    if (!Number.isFinite(duration) || duration <= 0) throw new Error('实机速度规划时长计算失败');
+    return duration;
+  }
+
+  trajectorySample(start: number[], target: number[], durationMs: number, elapsedMs: number): TrajectorySample {
+    let ok = 0;
+    const [position, velocity] = this.arrays([7, 7, 7, 7], pointers => {
+      this.module.HEAPF64.set(start, pointers[0] / 8);
+      this.module.HEAPF64.set(target, pointers[1] / 8);
+      ok = this.module._deploy_trajectory_sample(
+        pointers[0], pointers[1], durationMs, elapsedMs, pointers[2], pointers[3]);
+    }).slice(2);
+    if (!ok) throw new Error('实机速度规划采样失败');
+    return { position, velocity };
   }
 }

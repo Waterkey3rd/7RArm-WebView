@@ -17,7 +17,7 @@ $env:EM_CACHE = Join-Path $projectRoot '.emscripten-cache'
     '-std=c++20' '-O0' `
     '-sMODULARIZE=1' '-sEXPORT_ES6=1' '-sENVIRONMENT=web,worker,node' `
     '-sFILESYSTEM=0' '-sALLOW_MEMORY_GROWTH=1' `
-    '-sEXPORTED_FUNCTIONS=["_malloc","_free","_deploy_ik_solve","_deploy_fk","_deploy_fk_chain","_deploy_get_joint_limits","_deploy_model_version"]' `
+    '-sEXPORTED_FUNCTIONS=["_malloc","_free","_deploy_ik_solve","_deploy_fk","_deploy_fk_chain","_deploy_get_joint_limits","_deploy_model_version","_deploy_trajectory_duration","_deploy_trajectory_sample"]' `
     '-sEXPORTED_RUNTIME_METHODS=["HEAPF64"]' `
     '-o' (Join-Path $outputDir 'deploy_ik.js')
 

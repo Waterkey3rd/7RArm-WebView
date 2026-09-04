@@ -1,4 +1,5 @@
 import { RoboArmController } from '../controller';
+import type { PlaybackFrame } from '../controller';
 import { ArmRenderer } from '../renderer';
 import type { ArmState, Side } from '../types';
 import { cloneState, SIDES } from '../types';
@@ -37,6 +38,7 @@ export class App {
   private currentPlaybackIndex = 0;
   private playbackStartTime = 0;
   private animationRafId = 0;
+  private playbackFrames: PlaybackFrame[] = [];
 
   private constructor(
     private readonly host: HTMLElement,
@@ -236,16 +238,12 @@ export class App {
     this.isAnimating = true;
     const start = performance.now();
 
-    const frame = {
-      start: cloneState(from),
-      target: cloneState(to),
-      durationMs,
-      historyIndex: 0,
-    };
+    const frame = this.controller.planPlaybackFrame(from, to, durationMs);
+    const effectiveDurationMs = frame.durationMs;
 
     const tick = (now: number) => {
       const elapsed = (now - start) * this.playbackSpeed;
-      const progress = Math.min(1, elapsed / durationMs);
+      const progress = Math.min(1, elapsed / effectiveDurationMs);
 
       const interpolated = this.controller.interpolate(frame, elapsed);
       this.renderer.update(interpolated);
@@ -308,6 +306,7 @@ export class App {
     this.isPlaying = true;
     this.timeline.setPlayState(true);
     this.currentPlaybackIndex = Math.max(0, Math.min(this.controller.history.length - 1, fromIndex));
+    this.playbackFrames = this.controller.playback();
     this.playbackStartTime = performance.now();
     this.playNextFrame();
   }
@@ -337,15 +336,11 @@ export class App {
     this.activeKeypointIndex = this.currentPlaybackIndex;
     this.timeline.updateTimeline(this.currentPlaybackIndex);
 
-    const frame = {
-      start: cloneState(point.start),
-      target: cloneState(point.target),
-      durationMs: point.durationMs,
-      historyIndex: this.currentPlaybackIndex,
-    };
+    const frame = this.playbackFrames[this.currentPlaybackIndex]
+      ?? this.controller.planPlaybackFrame(point.start, point.target, point.durationMs, this.currentPlaybackIndex);
 
     const start = performance.now();
-    const duration = point.durationMs;
+    const duration = frame.durationMs;
 
     const tick = (now: number) => {
       if (!this.isPlaying) return;
@@ -360,8 +355,9 @@ export class App {
       let elapsedTotalMs = 0;
       let sequenceTotalMs = 0;
       for (let i = 0; i < history.length; i++) {
-        if (i < this.currentPlaybackIndex) elapsedTotalMs += history[i].durationMs;
-        sequenceTotalMs += history[i].durationMs;
+        const plannedDuration = this.playbackFrames[i]?.durationMs ?? history[i].durationMs;
+        if (i < this.currentPlaybackIndex) elapsedTotalMs += plannedDuration;
+        sequenceTotalMs += plannedDuration;
       }
       elapsedTotalMs += progress * duration;
       const totalRatio = sequenceTotalMs > 0 ? elapsedTotalMs / sequenceTotalMs : 0;
@@ -409,21 +405,17 @@ export class App {
     const history = this.controller.history;
     if (history.length === 0) return;
 
+    const frames = this.controller.playback();
     let totalDurationMs = 0;
-    history.forEach(p => totalDurationMs += p.durationMs);
+    frames.forEach(frame => totalDurationMs += frame.durationMs);
     const targetMs = progress * totalDurationMs;
 
     let accumulated = 0;
     for (let i = 0; i < history.length; i++) {
-      const dur = history[i].durationMs;
+      const frame = frames[i];
+      const dur = frame.durationMs;
       if (accumulated + dur >= targetMs || i === history.length - 1) {
         const frameProgress = Math.max(0, Math.min(1, (targetMs - accumulated) / dur));
-        const frame = {
-          start: cloneState(history[i].start),
-          target: cloneState(history[i].target),
-          durationMs: dur,
-          historyIndex: i,
-        };
         const state = this.controller.interpolate(frame, frameProgress * dur);
         this.renderer.update(state);
         this.viewportHud.update(state);

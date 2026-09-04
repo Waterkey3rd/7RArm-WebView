@@ -133,8 +133,9 @@ export class TimelineDock {
     this.filmstrip.innerHTML = '';
     this.selectedIndex = activePointIndex;
 
+    const plannedDurations = history.map(point => this.controller.plannedDuration(point));
     let totalDurationMs = 0;
-    history.forEach(p => totalDurationMs += p.durationMs);
+    plannedDurations.forEach(duration => totalDurationMs += duration);
     const totalTimeS = totalDurationMs / 1000;
     this.timeLabel.textContent = `0.00s / ${totalTimeS.toFixed(2)}s (${history.length} 关键点)`;
 
@@ -163,7 +164,7 @@ export class TimelineDock {
         </div>
         <div class="keypoint-label" title="${escapeHtml(point.label)}">${escapeHtml(point.label)}</div>
         <div class="keypoint-card-bottom">
-          <span>⏱ ${point.durationMs}ms</span>
+          <span title="请求时长 / 实机规划后时长">⏱ ${point.durationMs}ms${plannedDurations[idx] > point.durationMs + 1 ? ` → ${Math.round(plannedDurations[idx])}ms` : ''}</span>
           <div style="display: flex; gap: 4px;">
             <button class="btn btn-ghost btn-sm" style="padding: 2px 4px; font-size: 11px;" id="kp-edit-${idx}" title="编辑关键点 (F2)">${ICONS.EDIT}</button>
             <button class="btn btn-ghost btn-sm" style="padding: 2px 4px; font-size: 11px; color: var(--status-danger);" id="kp-del-${idx}" title="删除关键点">${ICONS.TRASH}</button>

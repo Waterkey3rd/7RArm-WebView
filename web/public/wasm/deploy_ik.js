@@ -1447,6 +1447,8 @@ var _deploy_fk = Module['_deploy_fk'] = createExportWrapper('deploy_fk', 4);
 var _deploy_fk_chain = Module['_deploy_fk_chain'] = createExportWrapper('deploy_fk_chain', 4);
 var _deploy_get_joint_limits = Module['_deploy_get_joint_limits'] = createExportWrapper('deploy_get_joint_limits', 3);
 var _deploy_model_version = Module['_deploy_model_version'] = createExportWrapper('deploy_model_version', 0);
+var _deploy_trajectory_duration = Module['_deploy_trajectory_duration'] = createExportWrapper('deploy_trajectory_duration', 3);
+var _deploy_trajectory_sample = Module['_deploy_trajectory_sample'] = createExportWrapper('deploy_trajectory_sample', 6);
 var _fflush = createExportWrapper('fflush', 1);
 var _malloc = Module['_malloc'] = createExportWrapper('malloc', 1);
 var _free = Module['_free'] = createExportWrapper('free', 1);

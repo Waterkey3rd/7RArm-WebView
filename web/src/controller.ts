@@ -1,4 +1,4 @@
-import { DEG, matrixToYpr, multiply3, rpyMatrix, smoothstep } from './math';
+import { DEG, matrixToYpr, multiply3, rpyMatrix } from './math';
 import { LatexFormula } from './formula';
 import { cartesianTarget, exportSequence, importSequence, jointTarget, recomputeHistory, solveTarget } from './sequence';
 import { cloneState, SIDES, type ActionSequence, type ArmState, type FrameTarget, type HistoryPoint, type Side, type Space, zeroState } from './types';
@@ -22,7 +22,15 @@ export interface HistoryEdit {
   timeoutMs?: number;
   targets?: Partial<Record<Side, FrameTarget>>;
 }
-export interface PlaybackFrame { start: ArmState; target: ArmState; durationMs: number; historyIndex: number }
+export interface PlaybackFrame {
+  start: ArmState;
+  target: ArmState;
+  /** Effective duration after firmware velocity/acceleration limiting. */
+  durationMs: number;
+  requestedDurationMs: number;
+  sideDurationMs: Record<Side, number>;
+  historyIndex: number;
+}
 export type ControllerListener = (controller: RoboArmController) => void;
 
 const validDuration = (value = 2000): number => {
@@ -217,11 +225,32 @@ export class RoboArmController {
 
   playback(from = 0, to = this.history.length - 1): PlaybackFrame[] {
     if (from < 0 || to >= this.history.length || from > to) throw new Error('播放范围无效');
-    return this.history.slice(from, to + 1).map((point, offset) => ({ start: cloneState(point.start), target: cloneState(point.target), durationMs: point.durationMs, historyIndex: from + offset }));
+    return this.history.slice(from, to + 1).map((point, offset) =>
+      this.planPlaybackFrame(point.start, point.target, point.durationMs, from + offset));
   }
+
+  planPlaybackFrame(start: ArmState, target: ArmState, requestedDurationMs: number, historyIndex = 0): PlaybackFrame {
+    const sideDurationMs = {} as Record<Side, number>;
+    for (const side of SIDES) {
+      sideDurationMs[side] = this.ik.trajectoryDuration(start[side], target[side], requestedDurationMs);
+    }
+    return {
+      start: cloneState(start), target: cloneState(target),
+      durationMs: Math.max(sideDurationMs.left, sideDurationMs.right),
+      requestedDurationMs, sideDurationMs, historyIndex,
+    };
+  }
+
+  plannedDuration(point: HistoryPoint): number {
+    return this.planPlaybackFrame(point.start, point.target, point.durationMs).durationMs;
+  }
+
   interpolate(frame: PlaybackFrame, elapsedMs: number): ArmState {
-    const ratio = smoothstep(Math.max(0, Math.min(1, elapsedMs / frame.durationMs))); const state = {} as ArmState;
-    for (const side of SIDES) state[side] = frame.start[side].map((q, i) => q + ratio * (frame.target[side][i] - q));
+    const state = {} as ArmState;
+    for (const side of SIDES) {
+      state[side] = this.ik.trajectorySample(
+        frame.start[side], frame.target[side], frame.sideDurationMs[side], elapsedMs).position;
+    }
     return state;
   }
 

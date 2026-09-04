@@ -9,6 +9,8 @@ interface Module {
   _deploy_ik_solve(side: number, r: number, p: number, current: number, out: number, d: number): number;
   _deploy_get_joint_limits(side: number, lower: number, upper: number): number;
   _deploy_model_version(): number;
+  _deploy_trajectory_duration(start: number, target: number, requestedMs: number): number;
+  _deploy_trajectory_sample(start: number, target: number, durationMs: number, elapsedMs: number, position: number, velocity: number): number;
 }
 
 async function moduleInstance(): Promise<Module> {
@@ -50,5 +52,33 @@ describe('deployed IK WASM ABI', () => {
       expect(diagnostics[0]).toBe(1);
       expect(Math.max(...solved.map((v, i) => Math.abs(v - q[i])))).toBeLessThan(2e-4);
     }
+  });
+
+  it('uses the firmware quintic planner with synchronized limits', async () => {
+    const m = await moduleInstance();
+    const start = Array(7).fill(0);
+    const target = [0, .8, 0, 0, 0, 0, 0];
+    let duration = 0;
+    memory(m, [7, 7], pointers => {
+      m.HEAPF64.set(start, pointers[0] / 8);
+      m.HEAPF64.set(target, pointers[1] / 8);
+      duration = m._deploy_trajectory_duration(pointers[0], pointers[1], 500);
+    });
+    // J2 velocity limit 0.8 rad/s requires 1.875 seconds for 0.8 rad.
+    expect(duration).toBeCloseTo(1875, 2);
+    const [position, velocity] = memory(m, [7, 7, 7, 7], pointers => {
+      m.HEAPF64.set(start, pointers[0] / 8);
+      m.HEAPF64.set(target, pointers[1] / 8);
+      expect(m._deploy_trajectory_sample(pointers[0], pointers[1], duration, duration / 2, pointers[2], pointers[3])).toBe(1);
+    }).slice(2);
+    expect(position[1]).toBeCloseTo(.4, 6);
+    expect(velocity[1]).toBeCloseTo(.8, 6);
+    const [endPosition, endVelocity] = memory(m, [7, 7, 7, 7], pointers => {
+      m.HEAPF64.set(start, pointers[0] / 8);
+      m.HEAPF64.set(target, pointers[1] / 8);
+      m._deploy_trajectory_sample(pointers[0], pointers[1], duration, duration, pointers[2], pointers[3]);
+    }).slice(2);
+    expect(endPosition[1]).toBeCloseTo(.8, 6);
+    expect(endVelocity[1]).toBe(0);
   });
 });

@@ -11,6 +11,9 @@ export interface FunctionTrajectoryOptions extends CommandOptions {
   tStart: number;
   tEnd: number;
   keypointCount: number;
+  /** Extra time used to move from the current pose to f(tStart). */
+  startTransitionMs?: number;
+  /** @deprecated Start discontinuities are now bridged automatically. */
   allowDiscontinuity?: boolean;
 }
 export interface HistoryEdit {
@@ -105,22 +108,37 @@ export class RoboArmController {
       compiled[side] = options.sources[side].map(source => LatexFormula.compile(source));
     }
     const initial = this.snapshotValues();
-    if (!options.allowDiscontinuity) {
-      for (const side of SIDES) {
-        const start = compiled[side].map(formula => formula.evaluate(options.tStart));
-        const actual = initial[side][options.space];
-        const positionCount = options.space === 'CartesianSpace' ? 3 : 0;
-        for (let i = 0; i < componentCount; i++) {
-          const delta = i >= positionCount && options.space === 'CartesianSpace' ? Math.abs((start[i] - actual[i] + 180) % 360 - 180) : Math.abs(start[i] - actual[i]);
-          const tolerance = options.space === 'JointAngleSpace' ? .5 : (i < 3 ? 1 : 1);
-          if (delta > tolerance) throw new Error(`公式 t 起点未衔接当前状态：${side} 分量 ${i + 1} 相差 ${delta.toFixed(3)}`);
-        }
+    const startValues = {} as Record<Side, number[]>;
+    let needsStartTransition = false;
+    for (const side of SIDES) {
+      startValues[side] = compiled[side].map(formula => formula.evaluate(options.tStart));
+      const actual = initial[side][options.space];
+      const positionCount = options.space === 'CartesianSpace' ? 3 : 0;
+      for (let i = 0; i < componentCount; i++) {
+        const delta = i >= positionCount && options.space === 'CartesianSpace'
+          ? Math.abs((startValues[side][i] - actual[i] + 180) % 360 - 180)
+          : Math.abs(startValues[side][i] - actual[i]);
+        if (delta > (options.space === 'JointAngleSpace' ? .5 : 1)) needsStartTransition = true;
       }
     }
     const totalMs = validDuration(options.durationMs);
     const edges = Array.from({ length: options.keypointCount + 1 }, (_, i) => Math.round(i * totalMs / options.keypointCount));
     if (edges.some((v, i) => i > 0 && v <= edges[i - 1])) throw new Error('总时长过短，关键点间隔不足 1 ms');
-    const points = Array.from({ length: options.keypointCount }, (_, i) => {
+    const points: Array<{ t: number; values: Record<Side, number[]>; durationMs: number; isStartTransition?: boolean }> = [];
+    if (needsStartTransition) {
+      const values = structuredClone(startValues);
+      for (const side of SIDES) {
+        if (options.space === 'JointAngleSpace') values[side] = values[side].map(v => v * DEG);
+        else for (let j = 3; j < 6; j++) values[side][j] *= DEG;
+      }
+      points.push({
+        t: options.tStart,
+        values,
+        durationMs: validDuration(options.startTransitionMs ?? 1000),
+        isStartTransition: true,
+      });
+    }
+    points.push(...Array.from({ length: options.keypointCount }, (_, i) => {
       const t = options.tStart + (options.tEnd - options.tStart) * (i + 1) / options.keypointCount;
       const values = {} as Record<Side, number[]>;
       for (const side of SIDES) {
@@ -129,23 +147,27 @@ export class RoboArmController {
         else for (let j = 3; j < 6; j++) values[side][j] *= DEG;
       }
       return { t, values, durationMs: edges[i + 1] - edges[i] };
-    });
+    }));
     const solved = await this.solveFunctionWorker(options.space, points);
     const group = 1 + this.history.filter(point => point.function?.pointIndex === 1).length;
-    const generated: HistoryPoint[] = solved.map((item: any, i: number) => ({
-      label: options.label ?? `函数轨迹 ${group} · ${i + 1}/${solved.length} · t=${item.t.toPrecision(6)}`,
+    const generated: HistoryPoint[] = solved.map((item: any, i: number) => {
+      const pointIndex = item.isStartTransition ? 0 : i - (needsStartTransition ? 1 : 0) + 1;
+      return {
+      label: item.isStartTransition
+        ? `函数轨迹 ${group} · 起点过渡 · t=${item.t.toPrecision(6)}`
+        : (options.label ?? `函数轨迹 ${group} · ${pointIndex}/${options.keypointCount} · t=${item.t.toPrecision(6)}`),
       start: cloneState(item.start), target: cloneState(item.target),
       frameTargets: {
         left: options.space === 'JointAngleSpace' ? jointTarget(item.values.left) : cartesianTarget(item.values.left),
         right: options.space === 'JointAngleSpace' ? jointTarget(item.values.right) : cartesianTarget(item.values.right),
       },
       durationMs: item.durationMs, timeoutMs: Math.max(0, Math.round(options.timeoutMs ?? 0)),
-      function: { group, pointIndex: i + 1, pointCount: solved.length, t: item.t, tStart: options.tStart, tEnd: options.tEnd, space: options.space, sources: structuredClone(options.sources) },
-    }));
+      function: { group, pointIndex, pointCount: options.keypointCount, t: item.t, tStart: options.tStart, tEnd: options.tEnd, space: options.space, sources: structuredClone(options.sources) },
+    }; });
     this.history.push(...generated); this.current = cloneState(generated.at(-1)!.target); this.changed(); return generated;
   }
 
-  private solveFunctionWorker(space: Space, points: Array<{ t: number; values: Record<Side, number[]>; durationMs: number }>): Promise<any[]> {
+  private solveFunctionWorker(space: Space, points: Array<{ t: number; values: Record<Side, number[]>; durationMs: number; isStartTransition?: boolean }>): Promise<any[]> {
     const id = ++this.workerId;
     const worker = new Worker(new URL('./kinematics.worker.ts', import.meta.url), { type: 'module' });
     return new Promise((resolve, reject) => {

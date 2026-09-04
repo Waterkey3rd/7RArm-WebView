@@ -2,6 +2,7 @@ import type { RoboArmController } from '../../controller';
 import { DEG, RAD, matrixToYpr } from '../../math';
 import { cartesianTarget, jointTarget } from '../../sequence';
 import { SIDES, type FrameTarget, type HistoryPoint, type Side, type Space } from '../../types';
+import { ICONS } from '../icons';
 import { showToast } from './toast';
 
 export class HistoryDialog {
@@ -32,10 +33,10 @@ export class HistoryDialog {
       <div class="modal-window" style="max-width: 780px;">
         <div class="modal-header">
           <div class="modal-title">
-            <span>✏️</span>
+            <span class="btn-icon-slot">${ICONS.EDIT}</span>
             <span>编辑动作关键点 #${index + 1}</span>
           </div>
-          <button class="modal-close-btn" id="modal-close-btn">×</button>
+          <button class="modal-close-btn" id="modal-close-btn">${ICONS.CLOSE}</button>
         </div>
 
         <div class="modal-body">
@@ -55,7 +56,8 @@ export class HistoryDialog {
           </div>
 
           <div class="alert-banner info">
-            <span>💡 修改该关键点后，系统将自动以后续新姿态重新级联解算（recomputeHistory）所有下游关键点。若发生奇异或超限将自动安全回滚。</span>
+            <span style="display: inline-flex; margin-top: 1px;">${ICONS.INFO}</span>
+            <span>修改该关键点后，系统将自动以后续新姿态重新级联解算所有下游关键点。若发生奇异或超限将自动安全回滚。</span>
           </div>
 
           <div class="formula-arms-container" id="edit-arms-container"></div>

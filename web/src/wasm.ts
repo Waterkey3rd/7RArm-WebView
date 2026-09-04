@@ -14,14 +14,22 @@ interface EmscriptenModule {
 type ModuleFactory = (options?: Record<string, unknown>) => Promise<EmscriptenModule>;
 const sideIndex = (side: Side): number => side === 'left' ? 0 : 1;
 
-export function resolveWasmBase(baseUrl = './wasm/', pageBase?: string): string {
+export function resolveWasmBase(baseUrl = '/wasm/', pageBase?: string): string {
   const withSlash = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  if (withSlash.startsWith('file://') || withSlash.startsWith('http://') || withSlash.startsWith('https://')) {
+    return withSlash;
+  }
   const runtimeBase = pageBase ?? (typeof document !== 'undefined'
     ? document.baseURI
     : (typeof location !== 'undefined' ? location.href : undefined));
-  if (runtimeBase) return new URL(withSlash, runtimeBase).href;
-  // Node tests and server-side callers must already provide an absolute URL.
-  return new URL(withSlash).href;
+  if (runtimeBase) {
+    try {
+      return new URL(withSlash, runtimeBase).href;
+    } catch {
+      // ignore
+    }
+  }
+  return withSlash;
 }
 
 export interface IkResult {
@@ -37,9 +45,22 @@ export interface ChainResult { positions: number[][]; axes: number[][] }
 export class DeployIK {
   private constructor(private readonly module: EmscriptenModule) {}
 
-  static async load(baseUrl = './wasm/', options: { wasmBinary?: Uint8Array } = {}): Promise<DeployIK> {
+  static async load(baseUrl = '/wasm/', options: { wasmBinary?: Uint8Array } = {}): Promise<DeployIK> {
     const resolvedBase = resolveWasmBase(baseUrl);
-    const factory = (await import(/* @vite-ignore */ `${resolvedBase}deploy_ik.js`)).default as ModuleFactory;
+    const jsUrl = `${resolvedBase}deploy_ik.js`;
+    let factory: ModuleFactory;
+    try {
+      factory = (await import(/* @vite-ignore */ jsUrl)).default as ModuleFactory;
+    } catch (importErr: any) {
+      const fallback = typeof location !== 'undefined'
+        ? new URL('wasm/deploy_ik.js', location.origin).href
+        : jsUrl;
+      try {
+        factory = (await import(/* @vite-ignore */ fallback)).default as ModuleFactory;
+      } catch {
+        throw new Error(`无法加载 WASM 启动脚本 (${jsUrl}): ${importErr?.message || String(importErr)}`);
+      }
+    }
     const module = await factory({ locateFile: (name: string) => `${resolvedBase}${name}`, ...options });
     if (module._deploy_model_version() !== 1) throw new Error('不支持的机械臂 WASM 模型版本');
     return new DeployIK(module);

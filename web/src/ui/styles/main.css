@@ -349,6 +349,18 @@ body {
   transform: translateY(1px);
 }
 
+.btn-icon-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mono-icon {
+  display: inline-block;
+  vertical-align: middle;
+  stroke: currentColor;
+}
+
 .btn-primary {
   background-color: var(--left-arm-primary);
   color: #ffffff;

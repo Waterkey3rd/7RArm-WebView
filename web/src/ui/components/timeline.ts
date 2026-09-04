@@ -1,5 +1,6 @@
 import type { RoboArmController } from '../../controller';
 import type { HistoryPoint } from '../../types';
+import { ICONS } from '../icons';
 
 export interface TimelineCallbacks {
   onPlayPause: () => void;
@@ -38,15 +39,18 @@ export class TimelineDock {
       <!-- Timeline Top Bar: Transport Controls & Scrubber -->
       <div class="timeline-controls-bar">
         <div class="transport-group">
-          <button class="btn btn-secondary btn-icon btn-sm" id="btn-tl-start" title="跳至序列开始 (Home)">⏮</button>
-          <button class="btn btn-secondary btn-icon btn-sm" id="btn-tl-prev" title="上一关键点 (Left Arrow)">⏪</button>
+          <button class="btn btn-secondary btn-icon btn-sm" id="btn-tl-start" title="跳至序列开始 (Home)">${ICONS.START}</button>
+          <button class="btn btn-secondary btn-icon btn-sm" id="btn-tl-prev" title="上一关键点 (Left Arrow)">${ICONS.PREV}</button>
           <button class="btn btn-primary btn-sm" id="btn-tl-play" title="播放/暂停 (Space)" style="min-width: 80px;">
-            <span id="play-icon">▶</span>
+            <span id="play-icon" class="btn-icon-slot">${ICONS.PLAY}</span>
             <span id="play-text">播放</span>
           </button>
-          <button class="btn btn-secondary btn-icon btn-sm" id="btn-tl-next" title="下一关键点 (Right Arrow)">⏩</button>
-          <button class="btn btn-secondary btn-icon btn-sm" id="btn-tl-end" title="跳至序列末尾 (End)">⏭</button>
-          <button class="btn btn-ghost btn-sm" id="btn-tl-loop" title="切换循环播放">🔁 单次</button>
+          <button class="btn btn-secondary btn-icon btn-sm" id="btn-tl-next" title="下一关键点 (Right Arrow)">${ICONS.NEXT}</button>
+          <button class="btn btn-secondary btn-icon btn-sm" id="btn-tl-end" title="跳至序列末尾 (End)">${ICONS.END}</button>
+          <button class="btn btn-ghost btn-sm" id="btn-tl-loop" title="切换循环播放">
+            <span class="btn-icon-slot">${ICONS.LOOP}</span>
+            <span id="loop-text">单次</span>
+          </button>
 
           <select class="form-select" id="select-tl-speed" style="padding: 2px 6px; font-size: 11px; height: 26px;">
             <option value="0.5">0.5x</option>
@@ -111,7 +115,7 @@ export class TimelineDock {
     const icon = this.element.querySelector('#play-icon');
     const text = this.element.querySelector('#play-text');
     if (icon && text) {
-      icon.textContent = playing ? '⏸' : '▶';
+      icon.innerHTML = playing ? ICONS.PAUSE : ICONS.PLAY;
       text.textContent = playing ? '暂停' : '播放';
     }
   }
@@ -137,7 +141,8 @@ export class TimelineDock {
     if (history.length === 0) {
       this.filmstrip.innerHTML = `
         <div style="color: var(--text-muted); font-size: 13px; margin: auto; display: flex; align-items: center; gap: 8px;">
-          <span>ℹ️ 尚无动作关键点。可通过右侧控制台执行运动，或点击上方“ƒ(t) 函数轨迹”添加关键点</span>
+          <span style="display: inline-flex;">${ICONS.INFO}</span>
+          <span>尚无动作关键点。可通过右侧控制台执行运动，或点击上方“函数轨迹”添加关键点</span>
         </div>
       `;
       return;
@@ -160,8 +165,8 @@ export class TimelineDock {
         <div class="keypoint-card-bottom">
           <span>⏱ ${point.durationMs}ms</span>
           <div style="display: flex; gap: 4px;">
-            <button class="btn btn-ghost btn-sm" style="padding: 1px 4px; font-size: 11px;" id="kp-edit-${idx}" title="编辑关键点 (F2)">✏️</button>
-            <button class="btn btn-ghost btn-sm" style="padding: 1px 4px; font-size: 11px; color: var(--status-danger);" id="kp-del-${idx}" title="删除关键点">🗑️</button>
+            <button class="btn btn-ghost btn-sm" style="padding: 2px 4px; font-size: 11px;" id="kp-edit-${idx}" title="编辑关键点 (F2)">${ICONS.EDIT}</button>
+            <button class="btn btn-ghost btn-sm" style="padding: 2px 4px; font-size: 11px; color: var(--status-danger);" id="kp-del-${idx}" title="删除关键点">${ICONS.TRASH}</button>
           </div>
         </div>
       `;

@@ -8,7 +8,7 @@ interface Request {
   wasmBase: string;
   start: ArmState;
   space: Space;
-  points: Array<{ t: number; values: Record<Side, number[]>; durationMs: number }>;
+  points: Array<{ t: number; values: Record<Side, number[]>; durationMs: number; isStartTransition?: boolean }>;
 }
 
 self.onmessage = async (event: MessageEvent<Request>) => {

@@ -118,10 +118,18 @@ export class App {
     });
 
     // Dialogs
-    this.trajectoryDialog = new TrajectoryDialog(this.controller, () => {
+    this.trajectoryDialog = new TrajectoryDialog(this.controller, (generated) => {
+      const firstGeneratedIndex = this.controller.history.length - generated.length;
+      this.stopPlayback();
+      this.isAnimating = false;
       this.activeKeypointIndex = this.controller.history.length - 1;
       this.timeline.updateTimeline(this.activeKeypointIndex);
-      this.syncAllViews();
+      if (generated.length > 0) {
+        this.renderer.update(generated[0].start);
+        this.viewportHud.update(generated[0].start);
+        this.controlPanel.syncState(generated[0].start);
+        this.startPlayback(firstGeneratedIndex);
+      }
     });
 
     this.historyDialog = new HistoryDialog(this.controller, () => {

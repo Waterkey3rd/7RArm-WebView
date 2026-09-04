@@ -24,7 +24,7 @@ export interface RendererOptions {
 
 export class ArmRenderer {
   private readonly scene = new THREE.Scene();
-  private readonly camera = new THREE.PerspectiveCamera(42, 1, 1, 4000);
+  private readonly camera = new THREE.PerspectiveCamera(42, 1, 1, 10000);
   private readonly renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   private readonly controls: OrbitControls;
   private readonly arms = {} as Record<Side, ArmMeshes>;
@@ -187,9 +187,9 @@ export class ArmRenderer {
 
   setTheme(theme: ThemeMode): void {
     this.currentTheme = theme;
+    this.scene.fog = null;
     if (theme === 'light') {
       this.scene.background = new THREE.Color(0xeef2f7);
-      this.scene.fog = new THREE.Fog(0xeef2f7, 950, 2400);
       this.hemiLight.color.setHex(0xffffff);
       this.hemiLight.groundColor.setHex(0xd0d7de);
       this.hemiLight.intensity = 2.4;
@@ -202,7 +202,6 @@ export class ArmRenderer {
       (this.baseMesh.material as THREE.MeshStandardMaterial).color.setHex(0x94a3b8);
     } else {
       this.scene.background = new THREE.Color(0x07101d);
-      this.scene.fog = new THREE.Fog(0x07101d, 800, 1800);
       this.hemiLight.color.setHex(0xb9dcff);
       this.hemiLight.groundColor.setHex(0x18202e);
       this.hemiLight.intensity = 2.0;

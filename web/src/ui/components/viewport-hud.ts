@@ -2,6 +2,7 @@ import type { ArmRenderer, CameraPreset } from '../../renderer';
 import type { ArmState, Side } from '../../types';
 import type { DeployIK } from '../../wasm';
 import { matrixToYpr, RAD } from '../../math';
+import { ICONS } from '../icons';
 
 export interface ViewportHudCallbacks {
   onSelectCamera: (preset: CameraPreset) => void;
@@ -43,7 +44,7 @@ export class ViewportHud {
 
       <!-- Center Top: Motion Progress Overlay -->
       <div class="motion-progress-banner" id="motion-progress-banner">
-        <span class="motion-spinner">⚡</span>
+        <span class="motion-spinner">${ICONS.SPINNER}</span>
         <span id="motion-progress-text">运动执行中... 0%</span>
       </div>
 
@@ -53,11 +54,23 @@ export class ViewportHud {
         <button class="btn btn-ghost btn-sm" data-cam="top" title="正上方顶视图">顶视</button>
         <button class="btn btn-ghost btn-sm" data-cam="front" title="正前方视图">正视</button>
         <button class="btn btn-ghost btn-sm" data-cam="side" title="右侧侧视图">侧视</button>
-        <button class="btn btn-ghost btn-sm" id="btn-cam-reset" title="复位视角">复位</button>
+        <button class="btn btn-ghost btn-sm" id="btn-cam-reset" title="复位视角">
+          <span style="margin-right: 2px;">${ICONS.RESET}</span>
+          <span>复位</span>
+        </button>
         <span style="width: 1px; height: 16px; background: var(--border-color); margin: 0 4px;"></span>
-        <button class="btn btn-ghost btn-sm" id="btn-layer-grid" title="切换地面参考网格">网格</button>
-        <button class="btn btn-ghost btn-sm" id="btn-layer-axes" title="切换关节转轴指示器">关节轴</button>
-        <button class="btn btn-ghost btn-sm" id="btn-layer-tool" title="切换末端工具坐标系">末端系</button>
+        <button class="btn btn-ghost btn-sm" id="btn-layer-grid" title="切换地面参考网格">
+          <span style="margin-right: 2px;">${ICONS.GRID}</span>
+          <span>网格</span>
+        </button>
+        <button class="btn btn-ghost btn-sm" id="btn-layer-axes" title="切换关节转轴指示器">
+          <span style="margin-right: 2px;">${ICONS.AXES}</span>
+          <span>关节轴</span>
+        </button>
+        <button class="btn btn-ghost btn-sm" id="btn-layer-tool" title="切换末端工具坐标系">
+          <span style="margin-right: 2px;">${ICONS.TOOL}</span>
+          <span>末端系</span>
+        </button>
       </div>
     `;
 

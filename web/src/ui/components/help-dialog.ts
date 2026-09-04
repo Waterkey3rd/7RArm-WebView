@@ -1,3 +1,5 @@
+import { ICONS } from '../icons';
+
 export class HelpDialog {
   private backdrop: HTMLElement | null = null;
 
@@ -11,15 +13,17 @@ export class HelpDialog {
       <div class="modal-window" style="max-width: 680px;">
         <div class="modal-header">
           <div class="modal-title">
-            <span>❓</span>
+            <span class="btn-icon-slot">${ICONS.HELP}</span>
             <span>SRS 7R 机器人工作站使用指南 & 快捷键</span>
           </div>
-          <button class="modal-close-btn" id="modal-close-btn">×</button>
+          <button class="modal-close-btn" id="modal-close-btn">${ICONS.CLOSE}</button>
         </div>
 
         <div class="modal-body" style="gap: 18px;">
           <div>
-            <div style="font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--text-primary);">⌨️ 键盘快捷键</div>
+            <div style="font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+              <span>键盘快捷键</span>
+            </div>
             <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px 14px; font-size: 13px;">
               <kbd style="padding: 2px 8px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-family: var(--font-mono); background: var(--bg-surface-subtle); text-align: center;">Space</kbd>
               <span>播放 / 暂停动作序列时间轴</span>

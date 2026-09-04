@@ -1,4 +1,5 @@
 import type { RoboArmController } from '../../controller';
+import { ICONS } from '../icons';
 import { showToast } from './toast';
 
 export class IoDialog {
@@ -22,10 +23,10 @@ export class IoDialog {
       <div class="modal-window" style="max-width: 740px;">
         <div class="modal-header">
           <div class="modal-title">
-            <span>💾</span>
+            <span class="btn-icon-slot">${ICONS.IO}</span>
             <span>动作序列管理 (performance-action-sequence-v2)</span>
           </div>
-          <button class="modal-close-btn" id="modal-close-btn">×</button>
+          <button class="modal-close-btn" id="modal-close-btn">${ICONS.CLOSE}</button>
         </div>
 
         <div style="display: flex; border-bottom: 1px solid var(--border-color); background: var(--bg-surface-subtle); padding: 0 16px;">
@@ -109,8 +110,14 @@ export class IoDialog {
     });
 
     footer.innerHTML = `
-      <button class="btn btn-secondary" id="btn-copy-json">📋 复制到剪贴板</button>
-      <button class="btn btn-primary" id="btn-download-json">💾 下载 JSON 文件</button>
+      <button class="btn btn-secondary" id="btn-copy-json">
+        <span class="btn-icon-slot">${ICONS.COPY}</span>
+        <span>复制到剪贴板</span>
+      </button>
+      <button class="btn btn-primary" id="btn-download-json">
+        <span class="btn-icon-slot">${ICONS.DOWNLOAD}</span>
+        <span>下载 JSON 文件</span>
+      </button>
     `;
 
     footer.querySelector('#btn-copy-json')?.addEventListener('click', async () => {
@@ -137,7 +144,7 @@ export class IoDialog {
   private renderImportTab(body: HTMLElement, footer: HTMLElement): void {
     body.innerHTML = `
       <div class="file-dropzone" id="file-dropzone">
-        <div class="dropzone-icon">📂</div>
+        <div class="dropzone-icon" style="color: var(--text-secondary);">${ICONS.UPLOAD}</div>
         <div class="dropzone-title">拖拽 JSON 文件到此区域，或点击选择文件</div>
         <div class="dropzone-desc">支持 performance-action-sequence-v2 规范动作序列文件</div>
         <input type="file" id="file-input" accept=".json" style="display: none;">

@@ -1,3 +1,5 @@
+import { ICONS } from '../icons';
+
 export type ToastType = 'info' | 'success' | 'warning' | 'danger';
 
 export interface ToastOptions {
@@ -18,11 +20,11 @@ function getOrCreateContainer(): HTMLElement {
   return container;
 }
 
-const ICONS: Record<ToastType, string> = {
-  info: 'ℹ️',
-  success: '✅',
-  warning: '⚠️',
-  danger: '❌',
+const TOAST_ICONS: Record<ToastType, string> = {
+  info: ICONS.INFO,
+  success: ICONS.CHECK,
+  warning: ICONS.WARN,
+  danger: ICONS.CROSS,
 };
 
 const DEFAULT_TITLES: Record<ToastType, string> = {
@@ -43,7 +45,7 @@ export function showToast(options: ToastOptions | string): void {
   item.className = `toast-item toast-${type}`;
 
   item.innerHTML = `
-    <span class="toast-icon">${ICONS[type]}</span>
+    <span class="toast-icon" style="display: flex; align-items: center;">${TOAST_ICONS[type]}</span>
     <div class="toast-content">
       <div class="toast-title">${escapeHtml(title)}</div>
       <div class="toast-message">${escapeHtml(opts.message)}</div>

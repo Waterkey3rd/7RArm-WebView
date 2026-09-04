@@ -1,7 +1,8 @@
 import type { RoboArmController } from '../../controller';
 import { LatexFormula } from '../../formula';
 import { DEG, RAD } from '../../math';
-import { SIDES, type Side, type Space } from '../../types';
+import { SIDES, type HistoryPoint, type Side, type Space } from '../../types';
+import { ICONS } from '../icons';
 import { showToast } from './toast';
 
 export interface TrajectoryPreset {
@@ -22,11 +23,10 @@ export class TrajectoryDialog {
   private tEndInput!: HTMLInputElement;
   private durationInput!: HTMLInputElement;
   private keypointsInput!: HTMLInputElement;
-  private allowDiscontinuityCheckbox!: HTMLInputElement;
 
   constructor(
     private readonly controller: RoboArmController,
-    private readonly onGenerated: () => void,
+    private readonly onGenerated: (generated: HistoryPoint[]) => void,
   ) {}
 
   open(): void {
@@ -39,10 +39,10 @@ export class TrajectoryDialog {
       <div class="modal-window" style="max-width: 880px;">
         <div class="modal-header">
           <div class="modal-title">
-            <span>ƒ(t)</span>
+            <span class="btn-icon-slot">${ICONS.FORMULA}</span>
             <span>添加关于 t 的 LaTeX 函数轨迹</span>
           </div>
-          <button class="modal-close-btn" id="modal-close-btn">×</button>
+          <button class="modal-close-btn" id="modal-close-btn">${ICONS.CLOSE}</button>
         </div>
 
         <div class="modal-body">
@@ -85,17 +85,12 @@ export class TrajectoryDialog {
               <label class="form-field-label">采样关键点数 N</label>
               <input type="number" class="form-input" id="inp-keypoints" value="20" step="1" min="2" max="300">
             </div>
-            <div class="form-field" style="justify-content: flex-end;">
-              <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; color: var(--text-secondary);">
-                <input type="checkbox" id="chk-discontinuity">
-                <span>允许首点不连续</span>
-              </label>
-            </div>
           </div>
 
           <!-- Alert / Discontinuity Check -->
           <div class="alert-banner info" id="traj-info-banner">
-            <span>💡 LaTeX 语法支持 \\sin(2\\pi t)、\\frac{1}{2}t^2、\\cos 等标准数学算式。当前机械臂状态将作为轨迹运动起点。</span>
+            <span style="display: inline-flex; margin-top: 1px;">${ICONS.INFO}</span>
+            <span>LaTeX 语法支持 \\sin(2\\pi t)、\\frac{1}{2}t^2、\\cos 等标准数学算式。若 f(tStart) 与当前状态不同，系统会先生成 1 秒过渡关键点，再从公式起点执行轨迹。</span>
           </div>
 
           <!-- Formula Rows for Left and Right Arms -->
@@ -103,10 +98,13 @@ export class TrajectoryDialog {
         </div>
 
         <div class="modal-footer">
-          <button class="btn btn-secondary" id="btn-snap-current">📐 自动对齐当前姿态</button>
+          <button class="btn btn-secondary" id="btn-snap-current">
+            <span class="btn-icon-slot">${ICONS.CARTESIAN}</span>
+            <span>自动对齐当前姿态</span>
+          </button>
           <button class="btn btn-secondary" id="btn-cancel">取消</button>
           <button class="btn btn-primary" id="btn-generate">
-            <span id="gen-spinner" style="display: none;">⏳</span>
+            <span id="gen-spinner" style="display: none; margin-right: 4px;">${ICONS.SPINNER}</span>
             <span>生成并执行轨迹</span>
           </button>
         </div>
@@ -119,7 +117,6 @@ export class TrajectoryDialog {
     this.tEndInput = this.backdrop.querySelector('#inp-tend') as HTMLInputElement;
     this.durationInput = this.backdrop.querySelector('#inp-duration') as HTMLInputElement;
     this.keypointsInput = this.backdrop.querySelector('#inp-keypoints') as HTMLInputElement;
-    this.allowDiscontinuityCheckbox = this.backdrop.querySelector('#chk-discontinuity') as HTMLInputElement;
 
     const spaceSelect = this.backdrop.querySelector('#select-space') as HTMLSelectElement;
     spaceSelect.addEventListener('change', () => {
@@ -295,7 +292,6 @@ export class TrajectoryDialog {
     const tEnd = parseFloat(this.tEndInput.value);
     const durationS = parseFloat(this.durationInput.value);
     const keypointCount = parseInt(this.keypointsInput.value, 10);
-    const allowDiscontinuity = this.allowDiscontinuityCheckbox.checked;
 
     if (!Number.isFinite(tStart) || !Number.isFinite(tEnd) || !Number.isFinite(durationS)) {
       showToast({ title: '参数错误', message: '时间起点、终点与时长必须为有效数值', type: 'danger' });
@@ -326,7 +322,6 @@ export class TrajectoryDialog {
         durationMs: Math.round(durationS * 1000),
         keypointCount,
         sources,
-        allowDiscontinuity,
       });
 
       showToast({
@@ -335,7 +330,7 @@ export class TrajectoryDialog {
         type: 'success',
       });
       this.close();
-      this.onGenerated();
+      this.onGenerated(generated);
     } catch (err: any) {
       showToast({
         title: '轨迹计算失败',

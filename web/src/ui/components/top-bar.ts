@@ -1,3 +1,5 @@
+import { ICONS } from '../icons';
+
 export interface TopBarCallbacks {
   onLoadDemo: () => void;
   onOpenTrajectory: () => void;
@@ -20,30 +22,30 @@ export class TopBar {
           <div class="brand-icon">7R</div>
           <span>SRS 7R 双臂机器人控制台</span>
         </div>
-        <div class="status-indicator" title="C++ AdaptiveHybrid IK WebAssembly 引擎已加载">
+        <div class="status-indicator" title="C++ AdaptiveHybrid IK WebAssembly 引擎已就绪">
           <span class="status-dot"></span>
-          <span>WASM 引擎在线</span>
+          <span>IK 内核在线</span>
         </div>
       </div>
 
       <div class="top-bar-right">
         <button class="btn btn-secondary btn-sm" id="btn-top-demo" title="载入预置实机动作序列">
-          <span>🎬</span>
+          <span class="btn-icon-slot">${ICONS.DEMO}</span>
           <span>载入演示动作</span>
         </button>
         <button class="btn btn-primary btn-sm" id="btn-top-trajectory" title="使用 LaTeX 公式生成关节或笛卡尔函数轨迹">
-          <span>ƒ(t)</span>
+          <span class="btn-icon-slot">${ICONS.FORMULA}</span>
           <span>函数轨迹</span>
         </button>
         <button class="btn btn-secondary btn-sm" id="btn-top-io" title="导入/导出 performance-action-sequence-v2 JSON">
-          <span>💾</span>
+          <span class="btn-icon-slot">${ICONS.IO}</span>
           <span>动作序列 IO</span>
         </button>
-        <button class="btn btn-ghost btn-icon btn-sm" id="btn-top-theme" title="切换深浅色彩主题">
-          <span id="theme-icon">☀️</span>
+        <button class="btn btn-ghost btn-icon btn-sm" id="btn-top-theme" title="切换深浅色彩模式">
+          <span id="theme-icon">${ICONS.SUN}</span>
         </button>
         <button class="btn btn-ghost btn-icon btn-sm" id="btn-top-help" title="快捷键与使用指南">
-          <span>❓</span>
+          <span>${ICONS.HELP}</span>
         </button>
       </div>
     `;
@@ -61,7 +63,7 @@ export class TopBar {
     this.currentTheme = theme;
     const icon = this.element.querySelector('#theme-icon');
     if (icon) {
-      icon.textContent = theme === 'light' ? '☀️' : '🌙';
+      icon.innerHTML = theme === 'light' ? ICONS.SUN : ICONS.MOON;
     }
   }
 }

@@ -3,6 +3,7 @@ import { DEG, RAD, matrixToYpr, rpyMatrix } from '../../math';
 import type { ArmState, Side } from '../../types';
 import { SIDES } from '../../types';
 import type { DeployIK } from '../../wasm';
+import { ICONS } from '../icons';
 import { showToast } from './toast';
 
 export type ControlMode = 'joint' | 'cartesian' | 'delta';
@@ -61,15 +62,15 @@ export class ControlPanel {
       <div class="dock-header">
         <div class="segmented-nav">
           <button class="segment-btn active" data-mode="joint">
-            <span>⚙️</span>
+            <span class="btn-icon-slot">${ICONS.JOINT}</span>
             <span>关节角</span>
           </button>
           <button class="segment-btn" data-mode="cartesian">
-            <span>📐</span>
+            <span class="btn-icon-slot">${ICONS.CARTESIAN}</span>
             <span>笛卡尔</span>
           </button>
           <button class="segment-btn" data-mode="delta">
-            <span>🎯</span>
+            <span class="btn-icon-slot">${ICONS.DELTA}</span>
             <span>Delta 微调</span>
           </button>
         </div>
@@ -90,13 +91,15 @@ export class ControlPanel {
 
         <div style="display: flex; gap: 8px; margin-top: 4px;">
           <button class="btn btn-primary btn-lg" id="btn-execute-motion" style="flex: 2;" title="执行当前姿态运动 (Ctrl+Enter)">
-            <span>▶ 执行运动</span>
+            <span class="btn-icon-slot">${ICONS.EXECUTE}</span>
+            <span>执行运动</span>
           </button>
           <button class="btn btn-secondary btn-lg" id="btn-undo-motion" style="flex: 1;" title="撤销回退至上一状态 (Ctrl+Z)">
-            <span>↶ 回退</span>
+            <span class="btn-icon-slot">${ICONS.UNDO}</span>
+            <span>回退</span>
           </button>
           <button class="btn btn-secondary btn-icon btn-lg" id="btn-reset-motion" title="重置机械臂到零位">
-            <span>🔄</span>
+            <span>${ICONS.RESET}</span>
           </button>
         </div>
       </div>
@@ -357,7 +360,7 @@ export class ControlPanel {
             </div>
           </div>
           <div class="ik-probe-box reachable" id="cart-probe-${side}">
-            <span id="cart-probe-icon-${side}">✅</span>
+            <span id="cart-probe-icon-${side}">${ICONS.CHECK}</span>
             <span id="cart-probe-text-${side}">IK 可达解算正常</span>
           </div>
         </div>
@@ -390,13 +393,13 @@ export class ControlPanel {
       const sol = this.controller.ik.solve(side, rot, pos, cur);
 
       badge.className = 'ik-probe-box reachable';
-      badge.querySelector(`#cart-probe-icon-${side}`)!.textContent = '✅';
+      badge.querySelector(`#cart-probe-icon-${side}`)!.innerHTML = ICONS.CHECK;
       badge.querySelector(`#cart-probe-text-${side}`)!.textContent =
         `IK 解算可达 · 误差 ${sol.positionErrorMm.toFixed(3)} mm / ${(sol.orientationErrorRad * RAD).toFixed(2)}°`;
       return true;
     } catch (e: any) {
       badge.className = 'ik-probe-box unreachable';
-      badge.querySelector(`#cart-probe-icon-${side}`)!.textContent = '❌';
+      badge.querySelector(`#cart-probe-icon-${side}`)!.innerHTML = ICONS.CROSS;
       badge.querySelector(`#cart-probe-text-${side}`)!.textContent = e.message || '超出工作空间/无有效逆解';
       return false;
     }

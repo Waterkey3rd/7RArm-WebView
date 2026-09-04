@@ -1,0 +1,22 @@
+# Local build/tool caches
+.conda-pkgs/
+.emscripten-env/
+.emscripten-cache/
+.npm-cache/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+.cartesian_impedance_build/
+
+# Frontend dependencies and generated site
+web/node_modules/
+web/dist/
+
+# Agent-local files
+.agents/
+.codex/
+.claude/
+
+# Native local build output
+deploy_ik_native.dll
+*.pdb

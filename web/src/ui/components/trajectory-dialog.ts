@@ -15,6 +15,8 @@ export interface TrajectoryPreset {
   sources: Record<Side, string[]>;
 }
 
+const CUSTOM_PRESET_STORAGE = 'srs7r.custom-trajectory-presets.v1';
+
 export class TrajectoryDialog {
   private backdrop: HTMLElement | null = null;
   private currentSpace: Space = 'JointAngleSpace';
@@ -23,6 +25,7 @@ export class TrajectoryDialog {
   private tEndInput!: HTMLInputElement;
   private durationInput!: HTMLInputElement;
   private keypointsInput!: HTMLInputElement;
+  private presetSelect!: HTMLSelectElement;
 
   constructor(
     private readonly controller: RoboArmController,
@@ -56,6 +59,8 @@ export class TrajectoryDialog {
                 <option value="helix">3. 空间立体螺旋线 (笛卡尔)</option>
                 <option value="wave">4. 协同挥手致意 (关节空间)</option>
               </select>
+              <button class="btn btn-secondary btn-sm" id="btn-save-preset" title="将当前参数与所有公式保存到本浏览器">保存模板</button>
+              <button class="btn btn-ghost btn-sm" id="btn-delete-preset" title="删除当前选中的自定义模板">删除模板</button>
             </div>
 
             <div style="display: flex; align-items: center; gap: 8px;">
@@ -124,10 +129,12 @@ export class TrajectoryDialog {
       this.rebuildFormulaRows();
     });
 
-    const presetSelect = this.backdrop.querySelector('#select-preset') as HTMLSelectElement;
-    presetSelect.addEventListener('change', () => {
-      this.applyPreset(presetSelect.value);
+    this.presetSelect = this.backdrop.querySelector('#select-preset') as HTMLSelectElement;
+    this.presetSelect.addEventListener('change', () => {
+      this.applyPreset(this.presetSelect.value);
     });
+    this.backdrop.querySelector('#btn-save-preset')?.addEventListener('click', () => this.saveCustomPreset());
+    this.backdrop.querySelector('#btn-delete-preset')?.addEventListener('click', () => this.deleteCustomPreset());
 
     this.backdrop.querySelector('#btn-snap-current')?.addEventListener('click', () => {
       this.snapToCurrentArmState();
@@ -137,6 +144,7 @@ export class TrajectoryDialog {
     this.backdrop.querySelector('#btn-cancel')?.addEventListener('click', () => this.close());
     this.backdrop.querySelector('#btn-generate')?.addEventListener('click', () => this.generate());
 
+    this.refreshPresetOptions();
     this.rebuildFormulaRows();
     this.applyPreset('sine');
   }
@@ -203,6 +211,12 @@ export class TrajectoryDialog {
 
   private applyPreset(key: string): void {
     const spaceSelect = this.backdrop?.querySelector('#select-space') as HTMLSelectElement;
+
+    if (key.startsWith('custom:')) {
+      const preset = this.loadCustomPresets()[Number(key.slice('custom:'.length))];
+      if (preset) this.applyPresetData(preset, spaceSelect);
+      return;
+    }
 
     if (key === 'sine') {
       this.currentSpace = 'JointAngleSpace';
@@ -287,6 +301,106 @@ export class TrajectoryDialog {
     }
   }
 
+  private applyPresetData(preset: TrajectoryPreset, spaceSelect: HTMLSelectElement): void {
+    this.currentSpace = preset.space;
+    spaceSelect.value = preset.space;
+    this.rebuildFormulaRows();
+    this.tStartInput.value = String(preset.tStart);
+    this.tEndInput.value = String(preset.tEnd);
+    this.durationInput.value = String(preset.durationMs / 1000);
+    this.keypointsInput.value = String(preset.keypointCount);
+    for (const side of SIDES) {
+      preset.sources[side].forEach((source, index) => {
+        if (this.formulaInputs[side][index]) this.formulaInputs[side][index].value = source;
+      });
+    }
+  }
+
+  private loadCustomPresets(): TrajectoryPreset[] {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(CUSTOM_PRESET_STORAGE) ?? '[]');
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter((item): item is TrajectoryPreset =>
+        item && typeof item.name === 'string'
+        && (item.space === 'JointAngleSpace' || item.space === 'CartesianSpace')
+        && Array.isArray(item.sources?.left) && Array.isArray(item.sources?.right));
+    } catch {
+      return [];
+    }
+  }
+
+  private storeCustomPresets(presets: TrajectoryPreset[]): void {
+    localStorage.setItem(CUSTOM_PRESET_STORAGE, JSON.stringify(presets));
+  }
+
+  private refreshPresetOptions(selected = 'sine'): void {
+    const builtIns = [
+      ['sine', '1. 双臂对称正弦波浪 (关节空间)'],
+      ['circle', '2. 笛卡尔空间圆周绘制 (笛卡尔)'],
+      ['helix', '3. 空间立体螺旋线 (笛卡尔)'],
+      ['wave', '4. 协同挥手致意 (关节空间)'],
+    ];
+    const custom = this.loadCustomPresets();
+    this.presetSelect.innerHTML = `
+      <optgroup label="内置模板">
+        ${builtIns.map(([value, label]) => `<option value="${value}">${label}</option>`).join('')}
+      </optgroup>
+      ${custom.length ? `<optgroup label="我的模板">${custom.map((preset, index) =>
+        `<option value="custom:${index}">${escapeHtml(preset.name)}</option>`).join('')}</optgroup>` : ''}
+    `;
+    this.presetSelect.value = selected;
+  }
+
+  private saveCustomPreset(): void {
+    const suggested = this.presetSelect.value.startsWith('custom:')
+      ? this.loadCustomPresets()[Number(this.presetSelect.value.slice(7))]?.name
+      : '';
+    const name = window.prompt('请输入自定义运动模板名称', suggested || '')?.trim();
+    if (!name) return;
+    const preset: TrajectoryPreset = {
+      name,
+      space: this.currentSpace,
+      tStart: Number(this.tStartInput.value),
+      tEnd: Number(this.tEndInput.value),
+      durationMs: Math.round(Number(this.durationInput.value) * 1000),
+      keypointCount: Number(this.keypointsInput.value),
+      sources: {
+        left: this.formulaInputs.left.map(input => input.value.trim()),
+        right: this.formulaInputs.right.map(input => input.value.trim()),
+      },
+    };
+    const presets = this.loadCustomPresets();
+    const existing = presets.findIndex(item => item.name === name);
+    if (existing >= 0) presets[existing] = preset;
+    else {
+      if (presets.length >= 30) {
+        showToast({ message: '自定义模板最多保存 30 个，请先删除旧模板', type: 'warning' });
+        return;
+      }
+      presets.push(preset);
+    }
+    this.storeCustomPresets(presets);
+    const index = existing >= 0 ? existing : presets.length - 1;
+    this.refreshPresetOptions(`custom:${index}`);
+    showToast({ title: '模板已保存', message: `“${name}”已保存在当前浏览器`, type: 'success' });
+  }
+
+  private deleteCustomPreset(): void {
+    if (!this.presetSelect.value.startsWith('custom:')) {
+      showToast({ message: '内置模板不能删除，请选择“我的模板”', type: 'info' });
+      return;
+    }
+    const index = Number(this.presetSelect.value.slice(7));
+    const presets = this.loadCustomPresets();
+    const preset = presets[index];
+    if (!preset || !window.confirm(`确认删除自定义模板“${preset.name}”？`)) return;
+    presets.splice(index, 1);
+    this.storeCustomPresets(presets);
+    this.refreshPresetOptions();
+    this.applyPreset('sine');
+    showToast({ message: '自定义模板已删除', type: 'success' });
+  }
+
   private async generate(): Promise<void> {
     const tStart = parseFloat(this.tStartInput.value);
     const tEnd = parseFloat(this.tEndInput.value);
@@ -348,4 +462,10 @@ export class TrajectoryDialog {
     }
     this.backdrop = null;
   }
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, character => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[character] ?? character));
 }

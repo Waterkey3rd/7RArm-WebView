@@ -6,6 +6,7 @@ import { ControlPanel } from './components/control-panel';
 import { HelpDialog } from './components/help-dialog';
 import { HistoryDialog } from './components/history-dialog';
 import { IoDialog } from './components/io-dialog';
+import { OperationLogDialog } from './components/operation-log-dialog';
 import { TimelineDock } from './components/timeline';
 import { showToast } from './components/toast';
 import { TopBar } from './components/top-bar';
@@ -22,6 +23,7 @@ export class App {
   private trajectoryDialog!: TrajectoryDialog;
   private historyDialog!: HistoryDialog;
   private ioDialog!: IoDialog;
+  private operationLogDialog!: OperationLogDialog;
   private helpDialog!: HelpDialog;
 
   private currentTheme: 'light' | 'dark' = 'light';
@@ -59,6 +61,7 @@ export class App {
     this.topBar = new TopBar({
       onLoadDemo: () => this.loadDemoSequence(),
       onOpenTrajectory: () => this.trajectoryDialog.open(),
+      onOpenHistory: () => this.operationLogDialog.open(),
       onOpenIO: () => this.ioDialog.open(),
       onToggleTheme: () => this.toggleTheme(),
       onOpenHelp: () => this.helpDialog.open(),
@@ -141,6 +144,11 @@ export class App {
       this.activeKeypointIndex = this.controller.history.length ? 0 : -1;
       this.timeline.updateTimeline(this.activeKeypointIndex);
       this.syncAllViews();
+    });
+
+    this.operationLogDialog = new OperationLogDialog(this.controller, {
+      onLocate: (index) => this.goToKeypoint(index),
+      onEdit: (index) => this.historyDialog.open(index),
     });
 
     this.helpDialog = new HelpDialog();

@@ -225,6 +225,15 @@ export class RoboArmController {
     return state;
   }
 
-  export(forceJointSpace = false): ActionSequence { return exportSequence(this.history, this.base, forceJointSpace); }
+  export(forceJointSpace = false, fromIndex = 0, toIndex = this.history.length - 1): ActionSequence {
+    if (!Number.isInteger(fromIndex) || !Number.isInteger(toIndex)
+      || fromIndex < 0 || toIndex >= this.history.length || fromIndex > toIndex) {
+      throw new Error('导出关键点范围无效');
+    }
+    const segment = this.history.slice(fromIndex, toIndex + 1);
+    // A segment must be independently playable. Its frame zero is therefore
+    // the solved joint state immediately before the selected first point.
+    return exportSequence(segment, cloneState(segment[0].start), forceJointSpace);
+  }
   import(payload: unknown): void { const loaded = importSequence(payload, this.ik); this.base = cloneState(loaded.base); this.history = loaded.history; this.current = cloneState(this.base); this.changed(); }
 }

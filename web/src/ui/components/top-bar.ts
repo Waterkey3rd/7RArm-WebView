@@ -3,6 +3,7 @@ import { ICONS } from '../icons';
 export interface TopBarCallbacks {
   onLoadDemo: () => void;
   onOpenTrajectory: () => void;
+  onOpenHistory: () => void;
   onOpenIO: () => void;
   onToggleTheme: () => void;
   onOpenHelp: () => void;
@@ -37,6 +38,10 @@ export class TopBar {
           <span class="btn-icon-slot">${ICONS.FORMULA}</span>
           <span>函数轨迹</span>
         </button>
+        <button class="btn btn-secondary btn-sm" id="btn-top-history" title="查看全部历史操作、关键点和函数来源">
+          <span class="btn-icon-slot">${ICONS.HISTORY}</span>
+          <span>历史记录</span>
+        </button>
         <button class="btn btn-secondary btn-sm" id="btn-top-io" title="导入/导出 performance-action-sequence-v2 JSON">
           <span class="btn-icon-slot">${ICONS.IO}</span>
           <span>动作序列 IO</span>
@@ -54,6 +59,7 @@ export class TopBar {
 
     this.element.querySelector('#btn-top-demo')?.addEventListener('click', () => this.callbacks.onLoadDemo());
     this.element.querySelector('#btn-top-trajectory')?.addEventListener('click', () => this.callbacks.onOpenTrajectory());
+    this.element.querySelector('#btn-top-history')?.addEventListener('click', () => this.callbacks.onOpenHistory());
     this.element.querySelector('#btn-top-io')?.addEventListener('click', () => this.callbacks.onOpenIO());
     this.themeBtn.addEventListener('click', () => this.callbacks.onToggleTheme());
     this.element.querySelector('#btn-top-help')?.addEventListener('click', () => this.callbacks.onOpenHelp());

@@ -86,6 +86,10 @@ controller.commandDelta({
 每个公式框只填写表达式右侧，例如 `275+25\cos(2\pi t)`；不要填写
 `y(t)=`、中文分号等内容。乘法可以直接省略或使用 LaTeX `\cdot`。
 
+函数轨迹窗口可将当前空间、时间参数、采样数和双臂公式保存为“我的模板”。
+自定义模板保存在当前浏览器的 `localStorage` 中，刷新页面后仍可选择、覆盖或
+删除。顶栏“历史记录”可查看全部关键点目标和函数来源，并可直接定位或编辑。
+
 ```ts
 await controller.addFunctionTrajectory({
   space: 'JointAngleSpace',
@@ -101,6 +105,10 @@ await controller.addFunctionTrajectory({
 ```
 
 历史点修改使用 `editHistory(index, edit)`。修改成功时，该点及所有后续 Cartesian 目标会以新的前序关节解重新计算；任何一步 IK 失败都会回滚整次修改。`export()` 和 `import()` 使用 `performance-action-sequence-v2`，规范单位为关节/姿态 rad、位置 mm、时间 ms。
+
+导出窗口可选择连续的起止关键点。导出中间片段时，文件第 0 帧自动使用所选
+首点的 `start` 关节状态，因此片段不依赖原序列前半段也能单独播放。核心 API
+对应为 `controller.export(forceJointSpace, fromIndex, toIndex)`。
 
 ## 桌面检查工具
 

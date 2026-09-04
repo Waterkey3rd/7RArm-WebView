@@ -6,6 +6,8 @@ export class IoDialog {
   private backdrop: HTMLElement | null = null;
   private currentTab: 'export' | 'import' = 'export';
   private forceJointSpace = false;
+  private exportFrom = 0;
+  private exportTo = -1;
 
   constructor(
     private readonly controller: RoboArmController,
@@ -16,6 +18,8 @@ export class IoDialog {
     if (this.backdrop) this.close();
 
     this.currentTab = initialTab;
+    this.exportFrom = 0;
+    this.exportTo = this.controller.history.length - 1;
     this.backdrop = document.createElement('div');
     this.backdrop.className = 'modal-backdrop';
 
@@ -85,7 +89,7 @@ export class IoDialog {
   private renderExportTab(body: HTMLElement, footer: HTMLElement): void {
     let jsonStr = '';
     try {
-      const data = this.controller.export(this.forceJointSpace);
+      const data = this.controller.export(this.forceJointSpace, this.exportFrom, this.exportTo);
       jsonStr = JSON.stringify(data, null, 2);
     } catch (err: any) {
       jsonStr = `// 无法导出: ${err.message || '没有历史关键点'}`;
@@ -100,12 +104,40 @@ export class IoDialog {
         </select>
       </div>
 
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
+        <div class="form-field">
+          <label class="form-field-label">起始关键点（包含）</label>
+          <select class="form-select" id="select-export-from">${this.rangeOptions(this.exportFrom)}</select>
+        </div>
+        <div class="form-field">
+          <label class="form-field-label">结束关键点（包含）</label>
+          <select class="form-select" id="select-export-to">${this.rangeOptions(this.exportTo)}</select>
+        </div>
+      </div>
+
+      <div class="alert-banner info" style="margin-top: 10px;">
+        <span style="display: inline-flex; margin-top: 1px;">${ICONS.INFO}</span>
+        <span>将导出第 ${this.exportFrom + 1}～${this.exportTo + 1} 个关键点。文件第 0 帧会自动写入所选片段开始前的关节状态，因此中间片段可以独立播放。</span>
+      </div>
+
       <div class="json-preview-box" id="json-preview">${escapeHtml(jsonStr)}</div>
     `;
 
     const sel = body.querySelector('#select-export-space') as HTMLSelectElement;
     sel.addEventListener('change', () => {
       this.forceJointSpace = sel.value === 'joint';
+      this.renderTabContent();
+    });
+    const fromSelect = body.querySelector('#select-export-from') as HTMLSelectElement;
+    const toSelect = body.querySelector('#select-export-to') as HTMLSelectElement;
+    fromSelect.addEventListener('change', () => {
+      this.exportFrom = Number(fromSelect.value);
+      if (this.exportTo < this.exportFrom) this.exportTo = this.exportFrom;
+      this.renderTabContent();
+    });
+    toSelect.addEventListener('change', () => {
+      this.exportTo = Number(toSelect.value);
+      if (this.exportFrom > this.exportTo) this.exportFrom = this.exportTo;
       this.renderTabContent();
     });
 
@@ -134,11 +166,17 @@ export class IoDialog {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `actionsequence_${Date.now()}.json`;
+      a.download = `actionsequence_${this.exportFrom + 1}-${this.exportTo + 1}_${Date.now()}.json`;
       a.click();
       URL.revokeObjectURL(url);
       showToast({ title: '已下载', message: '动作序列文件已保存', type: 'success' });
     });
+  }
+
+  private rangeOptions(selected: number): string {
+    return this.controller.history.map((point, index) =>
+      `<option value="${index}" ${index === selected ? 'selected' : ''}>#${index + 1} ${escapeHtml(point.label)}</option>`
+    ).join('');
   }
 
   private renderImportTab(body: HTMLElement, footer: HTMLElement): void {

@@ -30,6 +30,13 @@ describe('RoboArmController', () => {
     }, { durationMs: 2000 });
     expect(controller.history).toHaveLength(2);
 
+    // Exporting only a middle segment creates its own deterministic frame zero.
+    const segment = controller.export(false, 1, 1);
+    expect(segment.sequences.left.frames).toHaveLength(2);
+    expect((segment.sequences.left.frames[0] as any).target.jointAngles)
+      .toEqual(controller.history[1].start.left);
+    expect(segment.metadata?.frameLabels).toEqual(['initial', controller.history[1].label]);
+
     // Delete first keypoint
     controller.deleteHistory(0);
     expect(controller.history).toHaveLength(1);

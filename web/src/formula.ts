@@ -8,7 +8,9 @@ export class LatexFormula {
     const source = latex.trim().replace(/^\$(.*)\$$/s, '$1').trim();
     if (!source) throw new Error('公式不能为空');
     if (source.length > 500) throw new Error('公式长度不能超过 500 字符');
-    const expression = this.engine.parse(source);
+    // Refer to the class explicitly so compile() also works as an Array.map
+    // callback, where JavaScript does not preserve a static method's `this`.
+    const expression = LatexFormula.engine.parse(source);
     if (expression.errors.length) throw new Error(`LaTeX 公式语法错误：${source}`);
     const unknown = expression.symbols.filter(symbol => !['t', 'Pi', 'ExponentialE', 'ImaginaryUnit'].includes(symbol));
     if (unknown.length) throw new Error(`公式只允许变量 t，发现：${unknown.join(', ')}`);

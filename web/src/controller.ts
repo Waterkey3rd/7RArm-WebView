@@ -102,7 +102,7 @@ export class RoboArmController {
     const compiled = {} as Record<Side, LatexFormula[]>;
     for (const side of SIDES) {
       if (options.sources[side].length !== componentCount) throw new Error(`${side} 公式数量不正确`);
-      compiled[side] = options.sources[side].map(LatexFormula.compile);
+      compiled[side] = options.sources[side].map(source => LatexFormula.compile(source));
     }
     const initial = this.snapshotValues();
     if (!options.allowDiscontinuity) {

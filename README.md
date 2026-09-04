@@ -83,6 +83,9 @@ controller.commandDelta({
 
 函数轨迹使用轻量 JavaScript LaTeX 解析器 Cortex Compute Engine。关节与姿态公式输出 deg，位置公式输出 mm。当前状态作为轨迹起点，`keypointCount` 个采样点不包含重复起点；标准 JSON 只导出采样后的关键点，公式源码保留在运行时历史元数据中。
 
+每个公式框只填写表达式右侧，例如 `275+25\cos(2\pi t)`；不要填写
+`y(t)=`、中文分号等内容。乘法可以直接省略或使用 LaTeX `\cdot`。
+
 ```ts
 await controller.addFunctionTrajectory({
   space: 'JointAngleSpace',

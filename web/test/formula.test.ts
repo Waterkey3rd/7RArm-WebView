@@ -10,4 +10,9 @@ describe('LaTeX time formulas', () => {
   it('rejects variables other than t', () => {
     expect(() => LatexFormula.compile('a+t')).toThrow(/只允许变量 t/);
   });
+
+  it('can compile a batch without losing the parser engine context', () => {
+    const formulas = ['1', String.raw`25\cos(2\pi t)`].map(LatexFormula.compile);
+    expect(formulas[1].evaluate(0)).toBeCloseTo(25, 8);
+  });
 });

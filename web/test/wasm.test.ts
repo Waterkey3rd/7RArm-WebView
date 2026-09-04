@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { resolveWasmBase } from '../src/wasm';
 
 interface Module {
   HEAPF64: Float64Array; _malloc(n: number): number; _free(p: number): void;
@@ -24,6 +25,11 @@ function memory(module: Module, lengths: number[], action: (p: number[]) => void
 }
 
 describe('deployed IK WASM ABI', () => {
+  it('resolves a relative public path against the page, not src/wasm.ts', () => {
+    expect(resolveWasmBase('./wasm/', 'http://localhost:5173/')).toBe('http://localhost:5173/wasm/');
+    expect(resolveWasmBase('./wasm/', 'https://host.example/robot/index.html')).toBe('https://host.example/robot/wasm/');
+  });
+
   it('exports model version and asymmetric real limits', async () => {
     const m = await moduleInstance(); expect(m._deploy_model_version()).toBe(1);
     const left = memory(m, [7, 7], p => { expect(m._deploy_get_joint_limits(0, p[0], p[1])).toBe(1); });

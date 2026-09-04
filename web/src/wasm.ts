@@ -14,6 +14,16 @@ interface EmscriptenModule {
 type ModuleFactory = (options?: Record<string, unknown>) => Promise<EmscriptenModule>;
 const sideIndex = (side: Side): number => side === 'left' ? 0 : 1;
 
+export function resolveWasmBase(baseUrl = './wasm/', pageBase?: string): string {
+  const withSlash = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  const runtimeBase = pageBase ?? (typeof document !== 'undefined'
+    ? document.baseURI
+    : (typeof location !== 'undefined' ? location.href : undefined));
+  if (runtimeBase) return new URL(withSlash, runtimeBase).href;
+  // Node tests and server-side callers must already provide an absolute URL.
+  return new URL(withSlash).href;
+}
+
 export interface IkResult {
   q: number[];
   positionErrorMm: number;
@@ -27,9 +37,10 @@ export interface ChainResult { positions: number[][]; axes: number[][] }
 export class DeployIK {
   private constructor(private readonly module: EmscriptenModule) {}
 
-  static async load(baseUrl = new URL('./wasm/', document.baseURI).href, options: { wasmBinary?: Uint8Array } = {}): Promise<DeployIK> {
-    const factory = (await import(/* @vite-ignore */ `${baseUrl}deploy_ik.js`)).default as ModuleFactory;
-    const module = await factory({ locateFile: (name: string) => `${baseUrl}${name}`, ...options });
+  static async load(baseUrl = './wasm/', options: { wasmBinary?: Uint8Array } = {}): Promise<DeployIK> {
+    const resolvedBase = resolveWasmBase(baseUrl);
+    const factory = (await import(/* @vite-ignore */ `${resolvedBase}deploy_ik.js`)).default as ModuleFactory;
+    const module = await factory({ locateFile: (name: string) => `${resolvedBase}${name}`, ...options });
     if (module._deploy_model_version() !== 1) throw new Error('不支持的机械臂 WASM 模型版本');
     return new DeployIK(module);
   }

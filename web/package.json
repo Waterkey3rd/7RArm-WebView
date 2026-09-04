@@ -4,8 +4,10 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite build --watch",
-    "build": "tsc --noEmit && vite build",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build && vite build --config vite.config.lib.ts",
+    "build:app": "vite build",
+    "build:lib": "vite build --config vite.config.lib.ts",
     "test": "vitest run"
   },
   "dependencies": {

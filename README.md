@@ -2,28 +2,28 @@
 
 本项目包含与实机固件一致的 7R 双臂 IK、桌面 MuJoCo 检查工具，以及供后续界面使用的 Three.js + WebAssembly 核心库。
 
-## Web 核心库（当前不含 UI）
+## Web 交互 UI 与核心库
 
-`web/` 只提供可复用 API，不规定控制面板、页面布局或交互样式。后续前端可直接订阅控制器状态，把状态交给 `ArmRenderer`，也可自行实现其他渲染方式。
+`web/` 提供开箱即用的专业 Web 3D 机械臂控制台 UI（浅色高精度实验室风格）与可复用 TypeScript 核心库。
 
 核心结构：
 
 ```text
-页面 UI（后续实现）
+Web 交互 UI（Light Studio 控制台）
   ├─ RoboArmController
   │   ├─ Joint / Cartesian / Delta 命令
   │   ├─ LaTeX f(t) 采样
   │   ├─ 历史修改与下游 IK 重算
   │   ├─ 播放插值数据
   │   └─ performance-action-sequence-v2 导入/导出
-  ├─ ArmRenderer（可选 Three.js 简化刚体）
+  ├─ ArmRenderer（Three.js 浅色实验室刚体与视角控制）
   └─ Web Worker
       └─ AdaptiveHybrid IK WASM
 ```
 
 浏览器中没有 MuJoCo、动力学、Python 后端、数据库或 WebSocket。IK/FK 和关节链位置全部来自同一份 C++ 实机算法；TypeScript 不重复实现运动学。
 
-### 构建
+### 构建与运行
 
 在项目根目录构建 WASM：
 
@@ -36,16 +36,22 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\wasm\build_wasm.ps1
 - `web/public/wasm/deploy_ik.js`
 - `web/public/wasm/deploy_ik.wasm`
 
-构建 TypeScript 核心库：
+运行与构建 Web 控制台：
 
 ```powershell
 Set-Location .\web
 npm install
-npm run build
-npm test
+npm run dev     # 启动 Web UI 本地交互服务 (默认 http://localhost:5173)
+npm run build   # 打包 Web 单页应用与 web/dist/roboarm-web-core.js 核心库
+npm test        # 运行运动学与动作序列单元测试
 ```
 
-生成的库位于 `web/dist/roboarm-web-core.js`。`dist`、`node_modules` 和所有本地缓存均不提交。
+生成的单页应用位于 `web/dist/index.html`，核心库位于 `web/dist/roboarm-web-core.js`。`dist`、`node_modules` 和所有本地缓存均不提交。
+
+WASM 基址按页面 URL 解析：开发环境的 `./wasm/` 对应
+`http://localhost:5173/wasm/`，部署到子目录时会自动对应同级的
+`wasm/`。不要把它写成 `src/wasm/`；`src` 是源码模块目录，静态文件来自
+`web/public/wasm/`。
 
 ### API 示例
 

@@ -2,7 +2,7 @@ import { DEG, matrixToYpr, multiply3, rpyMatrix, smoothstep } from './math';
 import { LatexFormula } from './formula';
 import { cartesianTarget, exportSequence, importSequence, jointTarget, recomputeHistory, solveTarget } from './sequence';
 import { cloneState, SIDES, type ActionSequence, type ArmState, type FrameTarget, type HistoryPoint, type Side, type Space, zeroState } from './types';
-import { DeployIK } from './wasm';
+import { DeployIK, resolveWasmBase } from './wasm';
 
 export interface CommandOptions { label?: string; durationMs?: number; timeoutMs?: number }
 export interface FunctionTrajectoryOptions extends CommandOptions {
@@ -39,7 +39,7 @@ export class RoboArmController {
   private constructor(ik: DeployIK, wasmBase: string) { this.ik = ik; this.wasmBase = wasmBase; }
 
   static async create(wasmBase: string): Promise<RoboArmController> {
-    const normalized = wasmBase.endsWith('/') ? wasmBase : `${wasmBase}/`;
+    const normalized = resolveWasmBase(wasmBase);
     const ik = await DeployIK.load(normalized);
     return new RoboArmController(ik, normalized);
   }
@@ -171,6 +171,22 @@ export class RoboArmController {
       recomputeHistory(this.ik, this.history, this.base, index);
       this.current = cloneState(this.history.at(-1)?.target ?? this.base); this.changed(); return point;
     } catch (error) { this.history = backup; throw error; }
+  }
+
+  deleteHistory(index: number): void {
+    if (!this.history[index]) throw new Error('历史点索引不存在');
+    const backup = structuredClone(this.history);
+    try {
+      this.history.splice(index, 1);
+      if (this.history.length > 0) {
+        recomputeHistory(this.ik, this.history, this.base, Math.min(index, this.history.length - 1));
+      }
+      this.current = cloneState(this.history.at(-1)?.target ?? this.base);
+      this.changed();
+    } catch (error) {
+      this.history = backup;
+      throw error;
+    }
   }
 
   undo(): void { if (this.history.length) this.history.pop(); this.current = cloneState(this.history.at(-1)?.target ?? this.base); this.changed(); }

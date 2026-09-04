@@ -1,13 +1,6 @@
 import { defineConfig } from 'vite';
-import { resolve } from 'node:path';
 
 export default defineConfig({
-  build: {
-    lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
-      formats: ['es'],
-      fileName: 'roboarm-web-core',
-    },
-  },
+  base: './',
   worker: { format: 'es' },
 });

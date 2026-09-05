@@ -9,8 +9,8 @@ RUN npm ci --no-audit --no-fund
 COPY web/ ./
 RUN npm run build
 
-FROM nginx:1.28-alpine AS runtime
+FROM alpine:3.22 AS export
 
-COPY --from=build /app/dist/ /usr/share/nginx/html/
+COPY --from=build /app/dist/ /opt/web-dist/
 
-EXPOSE 80
+CMD ["cp", "-R", "/opt/web-dist/.", "/output/"]

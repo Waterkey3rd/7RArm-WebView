@@ -45,35 +45,33 @@ npm run build
 
 生产输出位于 `web/dist/`。该目录、`node_modules/` 和本地工具缓存不会提交。
 
-## Docker Compose 部署
+## Docker Compose 构建与导出
 
 在本仓库根目录执行（需要 Docker 和 Docker Compose v2）：
 
 ```sh
-docker compose up -d --build
+docker compose run --rm --build web-build
 ```
 
-启动后访问 `http://localhost:8080`；其他设备使用 `http://服务器IP:8080`，
-并确保服务器防火墙允许该端口。
+容器将构建好的页面、Worker 和 WASM 导出到宿主机的 `web/dist/`，然后退出。
+Compose 只负责构建和导出，不启动 HTTP 服务、不映射端口。
 
-默认端口为 `8080`。可在根目录的 `.env` 文件中设置 `WEB_PORT=8090`，或在
-PowerShell 中先执行 `$env:WEB_PORT = '8090'`，再启动 Compose。
+将本仓库 `web/dist/` 的绝对路径以只读方式挂载到你已有的 Nginx 容器，例如
+挂载到 `/usr/share/nginx/html/roboarm:ro`，再自行配置对应站点的 `root` 或
+`alias`。需要提供整个目录，包括 `assets/`、`wasm/` 和 `index.html`；
+`.wasm` 文件应使用 `application/wasm` 类型。
 
-```sh
-docker compose logs -f web
-docker compose down
-```
-
-Dockerfile 使用 Node 22 安装锁定依赖并执行生产构建，最终镜像由 Nginx 提供
-静态页面、Worker 和 WASM。构建时需要联网下载基础镜像与 npm 依赖；无需在
-宿主机安装 Node、Python 或 MuJoCo。
+Dockerfile 使用 Node 22 安装锁定依赖并执行生产构建，最后由 Alpine 容器
+复制静态产物到挂载目录。构建时需要联网下载基础镜像与 npm 依赖；无需在
+宿主机安装 Node、Python 或 MuJoCo。重新执行命令会覆盖同名文件，保留旧的
+带哈希资源文件。
 
 容器直接使用 `web/public/wasm/` 中已提交的产物，不重新编译 C++。修改 IK、
 机械臂配置或速度规划内核后，先按下一节重新生成 WASM，然后重新执行
-`docker compose up -d --build`。
+`docker compose run --rm --build web-build`。
 
 模板仍保存在各访问者浏览器的 localStorage 中，轨迹 JSON 通过浏览器导入导出。
-该容器没有服务器端用户数据存储，不需要挂载数据卷。
+`web/dist/` 挂载仅用于导出静态产物，不存储用户数据。
 
 本次仅提供容器配置，未在 Docker 环境中验证。
 

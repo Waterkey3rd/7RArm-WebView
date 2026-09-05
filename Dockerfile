@@ -9,8 +9,15 @@ RUN npm ci --no-audit --no-fund
 COPY web/ ./
 RUN npm run build
 
-FROM alpine:3.22 AS export
+FROM node:22-alpine AS runtime
+
+WORKDIR /app
+ENV NPM_CONFIG_CACHE=/app/.npm-cache
+RUN npm install --global http-server@14.1.1 --no-audit --no-fund
 
 COPY --from=build /app/dist/ /opt/web-dist/
 
-CMD ["cp", "-R", "/opt/web-dist/.", "/output/"]
+RUN mkdir -p /output
+EXPOSE 8080
+
+CMD ["sh", "-c", "cp -R /opt/web-dist/. /output/ && exec http-server /opt/web-dist -a 0.0.0.0 -p 8080 -c-1"]

@@ -1,8 +1,19 @@
 services:
-  web-build:
+  web:
+    container_name: roboarm-web-view
     build:
       context: .
       dockerfile: Dockerfile
     volumes:
       - ./web/dist:/output
-    restart: "no"
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    networks:
+      - web_gateway
+    init: true
+    restart: unless-stopped
+
+networks:
+  web_gateway:
+    external: true
+    name: web_gateway

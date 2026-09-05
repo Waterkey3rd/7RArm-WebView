@@ -45,6 +45,38 @@ npm run build
 
 生产输出位于 `web/dist/`。该目录、`node_modules/` 和本地工具缓存不会提交。
 
+## Docker Compose 部署
+
+在本仓库根目录执行（需要 Docker 和 Docker Compose v2）：
+
+```sh
+docker compose up -d --build
+```
+
+启动后访问 `http://localhost:8080`；其他设备使用 `http://服务器IP:8080`，
+并确保服务器防火墙允许该端口。
+
+默认端口为 `8080`。可在根目录的 `.env` 文件中设置 `WEB_PORT=8090`，或在
+PowerShell 中先执行 `$env:WEB_PORT = '8090'`，再启动 Compose。
+
+```sh
+docker compose logs -f web
+docker compose down
+```
+
+Dockerfile 使用 Node 22 安装锁定依赖并执行生产构建，最终镜像由 Nginx 提供
+静态页面、Worker 和 WASM。构建时需要联网下载基础镜像与 npm 依赖；无需在
+宿主机安装 Node、Python 或 MuJoCo。
+
+容器直接使用 `web/public/wasm/` 中已提交的产物，不重新编译 C++。修改 IK、
+机械臂配置或速度规划内核后，先按下一节重新生成 WASM，然后重新执行
+`docker compose up -d --build`。
+
+模板仍保存在各访问者浏览器的 localStorage 中，轨迹 JSON 通过浏览器导入导出。
+该容器没有服务器端用户数据存储，不需要挂载数据卷。
+
+本次仅提供容器配置，未在 Docker 环境中验证。
+
 ## 重新构建 WASM
 
 构建脚本要求项目根目录存在本地 Emscripten 环境：

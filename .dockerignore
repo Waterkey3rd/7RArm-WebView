@@ -1,0 +1,16 @@
+# Only the frontend and its precompiled WASM are needed for the image.
+**
+!Dockerfile
+!web/
+!web/**
+web/node_modules/
+web/dist/
+web/.npm-cache/
+web/.vite/
+web/coverage/
+web/**/.git/
+web/**/.codex/
+web/**/.agents/
+web/**/.claude/
+web/**/.env*
+web/**/*.log

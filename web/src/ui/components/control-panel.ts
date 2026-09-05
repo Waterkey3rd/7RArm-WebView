@@ -33,6 +33,7 @@ export class ControlPanel {
   // Delta inputs
   private deltaStepMm = 10;
   private deltaStepDeg = 10;
+  private deltaActiveTab: 'left' | 'right' | 'both' = 'left';
 
   // Limits in deg
   private limitsDeg: Record<Side, { lower: number[]; upper: number[] }> = {} as any;
@@ -40,6 +41,7 @@ export class ControlPanel {
   private durationSlider!: HTMLInputElement;
   private durationLabel!: HTMLElement;
   private executeBtn!: HTMLButtonElement;
+  private deltaTipEl!: HTMLElement;
 
   constructor(
     private readonly container: HTMLElement,
@@ -90,6 +92,10 @@ export class ControlPanel {
         <input type="range" class="joint-slider" id="motion-duration-slider" min="0.3" max="8.0" step="0.1" value="2.0">
 
         <div style="display: flex; gap: 8px; margin-top: 4px;">
+          <div id="dock-footer-delta-tip" class="delta-instant-badge" style="display: none; flex: 2; justify-content: center; align-items: center; gap: 6px;">
+            <span class="btn-icon-slot">${ICONS.CHECK}</span>
+            <span>微调按键即点即动</span>
+          </div>
           <button class="btn btn-primary btn-lg" id="btn-execute-motion" style="flex: 2;" title="执行当前姿态运动 (Ctrl+Enter)">
             <span class="btn-icon-slot">${ICONS.EXECUTE}</span>
             <span>执行运动</span>
@@ -110,6 +116,7 @@ export class ControlPanel {
     this.durationSlider = this.element.querySelector('#motion-duration-slider') as HTMLInputElement;
     this.durationLabel = this.element.querySelector('#duration-val-display') as HTMLElement;
     this.executeBtn = this.element.querySelector('#btn-execute-motion') as HTMLButtonElement;
+    this.deltaTipEl = this.element.querySelector('#dock-footer-delta-tip') as HTMLElement;
 
     this.durationSlider.addEventListener('input', () => {
       this.durationLabel.textContent = `${parseFloat(this.durationSlider.value).toFixed(1)} 秒`;
@@ -131,11 +138,23 @@ export class ControlPanel {
 
     // Initial render
     this.renderModeContent();
+    this.updateFooterMode();
   }
 
   private setMode(mode: ControlMode): void {
     this.currentMode = mode;
     this.renderModeContent();
+    this.updateFooterMode();
+  }
+
+  private updateFooterMode(): void {
+    if (this.currentMode === 'delta') {
+      this.executeBtn.style.display = 'none';
+      if (this.deltaTipEl) this.deltaTipEl.style.display = 'flex';
+    } else {
+      this.executeBtn.style.display = 'inline-flex';
+      if (this.deltaTipEl) this.deltaTipEl.style.display = 'none';
+    }
   }
 
   private getDurationMs(): number {
@@ -408,25 +427,62 @@ export class ControlPanel {
   // ==========================================
   // Mode 3: Delta Jogging
   // ==========================================
+  // ==========================================
+  // Mode 3: Delta Jogging
+  // ==========================================
   private renderDeltaMode(parent: HTMLElement): void {
-    // Step selector
-    const stepBox = document.createElement('div');
-    stepBox.className = 'arm-card';
-    stepBox.style.padding = '10px 14px';
-    stepBox.innerHTML = `
-      <div style="font-size: 12px; font-weight: 700; margin-bottom: 6px; color: var(--text-secondary);">微调步长选择 (Step Size)</div>
-      <div style="display: flex; gap: 6px;">
-        <button class="btn btn-secondary btn-sm" data-step="1" style="flex: 1;">1 mm / 1°</button>
-        <button class="btn btn-secondary btn-sm" data-step="5" style="flex: 1;">5 mm / 5°</button>
-        <button class="btn btn-primary btn-sm" data-step="10" style="flex: 1;">10 mm / 10°</button>
-        <button class="btn btn-secondary btn-sm" data-step="25" style="flex: 1;">25 mm / 25°</button>
+    parent.innerHTML = '';
+
+    const container = document.createElement('div');
+    container.className = 'delta-panel-container';
+
+    // Arm Selector Tabs
+    const header = document.createElement('div');
+    header.className = 'delta-container-header';
+    header.innerHTML = `
+      <div class="delta-arm-tabs">
+        <button class="delta-tab-btn ${this.deltaActiveTab === 'left' ? 'active left' : ''}" data-arm="left">
+          <span class="tab-indicator left"></span>
+          <span>左臂微调</span>
+        </button>
+        <button class="delta-tab-btn ${this.deltaActiveTab === 'right' ? 'active right' : ''}" data-arm="right">
+          <span class="tab-indicator right"></span>
+          <span>右臂微调</span>
+        </button>
+        <button class="delta-tab-btn ${this.deltaActiveTab === 'both' ? 'active' : ''}" data-arm="both">
+          <span>双臂同时</span>
+        </button>
       </div>
     `;
-    parent.appendChild(stepBox);
+    container.appendChild(header);
 
-    stepBox.querySelectorAll<HTMLButtonElement>('[data-step]').forEach(btn => {
+    header.querySelectorAll<HTMLButtonElement>('[data-arm]').forEach(btn => {
       btn.addEventListener('click', () => {
-        stepBox.querySelectorAll('.btn').forEach(b => {
+        this.deltaActiveTab = btn.dataset.arm as 'left' | 'right' | 'both';
+        this.renderDeltaMode(parent);
+      });
+    });
+
+    // Step selector Card
+    const stepCard = document.createElement('div');
+    stepCard.className = 'delta-step-card';
+    stepCard.innerHTML = `
+      <div class="delta-step-header">
+        <span class="delta-step-title">微调步长选择 (Step Size)</span>
+        <span class="delta-step-badge" id="delta-step-badge">${this.deltaStepMm} mm / ${this.deltaStepDeg}°</span>
+      </div>
+      <div class="delta-step-buttons">
+        <button class="btn ${this.deltaStepMm === 1 ? 'btn-primary' : 'btn-secondary'} btn-sm" data-step="1" style="flex: 1;">1 mm / 1°</button>
+        <button class="btn ${this.deltaStepMm === 5 ? 'btn-primary' : 'btn-secondary'} btn-sm" data-step="5" style="flex: 1;">5 mm / 5°</button>
+        <button class="btn ${this.deltaStepMm === 10 ? 'btn-primary' : 'btn-secondary'} btn-sm" data-step="10" style="flex: 1;">10 mm / 10°</button>
+        <button class="btn ${this.deltaStepMm === 25 ? 'btn-primary' : 'btn-secondary'} btn-sm" data-step="25" style="flex: 1;">25 mm / 25°</button>
+      </div>
+    `;
+    container.appendChild(stepCard);
+
+    stepCard.querySelectorAll<HTMLButtonElement>('[data-step]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        stepCard.querySelectorAll('.btn').forEach(b => {
           b.classList.remove('btn-primary');
           b.classList.add('btn-secondary');
         });
@@ -435,10 +491,19 @@ export class ControlPanel {
         const s = parseFloat(btn.dataset.step || '10');
         this.deltaStepMm = s;
         this.deltaStepDeg = s;
+        const badge = stepCard.querySelector('#delta-step-badge');
+        if (badge) badge.textContent = `${s} mm / ${s}°`;
       });
     });
 
-    for (const side of SIDES) {
+    // Cards Scroll Container
+    const cardsContainer = document.createElement('div');
+    cardsContainer.className = 'delta-cards-scroll-container';
+
+    const sidesToShow: Side[] =
+      this.deltaActiveTab === 'both' ? SIDES : [this.deltaActiveTab as Side];
+
+    for (const side of sidesToShow) {
       const card = document.createElement('div');
       card.className = `arm-card ${side}-arm`;
       const sideName = side === 'left' ? '左臂末端工具系微调' : '右臂末端工具系微调';
@@ -449,7 +514,10 @@ export class ControlPanel {
           <span style="font-size: 11px; font-weight: normal; opacity: 0.8;">Tool-Frame Relative</span>
         </div>
         <div class="arm-card-content">
-          <div style="font-size: 11px; font-weight: 700; color: var(--text-muted);">位置移动 (ΔX, ΔY, ΔZ)</div>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">位置移动 (ΔX, ΔY, ΔZ)</span>
+            <span style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono);">步进 ±${this.deltaStepMm}mm</span>
+          </div>
           <div class="jog-pad-grid">
             <button class="jog-key" data-side="${side}" data-axis="0" data-dir="1">+X 前</button>
             <button class="jog-key" data-side="${side}" data-axis="1" data-dir="1">+Y 左</button>
@@ -459,7 +527,10 @@ export class ControlPanel {
             <button class="jog-key" data-side="${side}" data-axis="2" data-dir="-1">-Z 下</button>
           </div>
 
-          <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); margin-top: 6px;">姿态旋转 (ΔYaw, ΔPitch, ΔRoll)</div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 6px;">
+            <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">姿态旋转 (ΔYaw, ΔPitch, ΔRoll)</span>
+            <span style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono);">步进 ±${this.deltaStepDeg}°</span>
+          </div>
           <div class="jog-pad-grid">
             <button class="jog-key" data-side="${side}" data-axis="3" data-dir="1">+Yaw 偏航</button>
             <button class="jog-key" data-side="${side}" data-axis="4" data-dir="1">+Pitch 俯仰</button>
@@ -471,7 +542,7 @@ export class ControlPanel {
         </div>
       `;
 
-      parent.appendChild(card);
+      cardsContainer.appendChild(card);
 
       card.querySelectorAll<HTMLButtonElement>('.jog-key').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -482,6 +553,9 @@ export class ControlPanel {
         });
       });
     }
+
+    container.appendChild(cardsContainer);
+    parent.appendChild(container);
   }
 
   private handleDeltaJog(side: Side, axis: number, dir: number): void {

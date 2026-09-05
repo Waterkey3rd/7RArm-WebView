@@ -92,8 +92,8 @@ export class TimelineDock {
 
     this.loopBtn.addEventListener('click', () => {
       this.isLooping = !this.isLooping;
-      this.loopBtn.textContent = this.isLooping ? '🔁 循环' : '🔁 单次';
-      this.loopBtn.style.color = this.isLooping ? 'var(--left-arm-primary)' : 'inherit';
+      this.loopBtn.innerHTML = `<span class="btn-icon-slot">${ICONS.LOOP}</span><span id="loop-text">${this.isLooping ? '循环' : '单次'}</span>`;
+      this.loopBtn.style.color = this.isLooping ? 'var(--text-primary)' : 'inherit';
       this.callbacks.onToggleLoop(this.isLooping);
     });
 
@@ -164,7 +164,7 @@ export class TimelineDock {
         </div>
         <div class="keypoint-label" title="${escapeHtml(point.label)}">${escapeHtml(point.label)}</div>
         <div class="keypoint-card-bottom">
-          <span title="请求时长 / 实机规划后时长">⏱ ${point.durationMs}ms${plannedDurations[idx] > point.durationMs + 1 ? ` → ${Math.round(plannedDurations[idx])}ms` : ''}</span>
+          <span style="display: flex; align-items: center; gap: 4px;" title="请求时长 / 实机规划后时长"><span class="btn-icon-slot">${ICONS.CLOCK}</span><span>${point.durationMs}ms${plannedDurations[idx] > point.durationMs + 1 ? ` → ${Math.round(plannedDurations[idx])}ms` : ''}</span></span>
           <div style="display: flex; gap: 4px;">
             <button class="btn btn-ghost btn-sm" style="padding: 2px 4px; font-size: 11px;" id="kp-edit-${idx}" title="编辑关键点 (F2)">${ICONS.EDIT}</button>
             <button class="btn btn-ghost btn-sm" style="padding: 2px 4px; font-size: 11px; color: var(--status-danger);" id="kp-del-${idx}" title="删除关键点">${ICONS.TRASH}</button>

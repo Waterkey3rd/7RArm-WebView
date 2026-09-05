@@ -61,6 +61,54 @@ export class ArmRenderer {
     this.controls.minDistance = 150;
     this.controls.addEventListener('change', () => this.render());
 
+    // Blender-style Navigation Controls:
+    // MMB: Rotate (Orbit) | Shift + MMB: Pan | Ctrl + MMB / Wheel: Zoom (Dolly)
+    // Alt + LMB: Trackpad Emulate 3-Button Mouse (Rotate) | Alt + Shift + LMB: Pan | Alt + Ctrl + LMB: Zoom
+    // LMB: Disabled for camera rotation (reserved for interactions)
+    // RMB: Pan (fallback convenient pan)
+    this.controls.mouseButtons = {
+      LEFT: -1 as any,
+      MIDDLE: THREE.MOUSE.ROTATE,
+      RIGHT: THREE.MOUSE.PAN,
+    };
+
+    // Prevent default browser context menu when right-clicking on canvas
+    this.renderer.domElement.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+    });
+
+    // Intercept pointerdown in capture phase to dynamically handle Blender modifier combinations
+    this.renderer.domElement.addEventListener(
+      'pointerdown',
+      (e: PointerEvent) => {
+        // Trackpad Emulate 3 Button Mouse with Alt key
+        if (e.button === 0) {
+          if (e.altKey) {
+            if (e.ctrlKey || e.metaKey) {
+              this.controls.mouseButtons.LEFT = THREE.MOUSE.DOLLY;
+            } else if (e.shiftKey) {
+              this.controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
+            } else {
+              this.controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
+            }
+          } else {
+            this.controls.mouseButtons.LEFT = -1 as any;
+          }
+        }
+
+        // Middle Mouse Button: Rotate / Pan (Shift) / Zoom (Ctrl)
+        if (e.button === 1) {
+          if (e.ctrlKey || e.metaKey) {
+            this.controls.mouseButtons.MIDDLE = THREE.MOUSE.DOLLY;
+          } else {
+            // OrbitControls natively checks event.shiftKey and switches to PAN when mouseButtons.MIDDLE is ROTATE
+            this.controls.mouseButtons.MIDDLE = THREE.MOUSE.ROTATE;
+          }
+        }
+      },
+      { capture: true },
+    );
+
     // Lights
     this.hemiLight = new THREE.HemisphereLight(0xffffff, 0xd0d7de, 2.4);
     this.scene.add(this.hemiLight);

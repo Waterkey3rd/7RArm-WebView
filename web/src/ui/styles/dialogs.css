@@ -373,3 +373,219 @@
   font-size: 12px;
   line-height: 1.4;
 }
+
+/* =========================================================
+   Operation Guide Modal Styles
+   ========================================================= */
+
+.guide-modal-window {
+  max-width: 820px;
+  width: 92%;
+  height: 85vh;
+  max-height: 720px;
+}
+
+.guide-nav-bar {
+  padding: 10px 20px;
+  background-color: var(--bg-surface-subtle);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.guide-modal-body {
+  flex: 1;
+  padding: 20px 24px;
+  overflow-y: auto;
+  gap: 16px;
+}
+
+.guide-chk-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  user-select: none;
+}
+
+.guide-chk-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--left-arm-primary);
+  cursor: pointer;
+}
+
+.guide-intro-banner {
+  background: linear-gradient(135deg, var(--left-arm-light), var(--bg-surface-subtle));
+  border: 1px solid var(--left-arm-border);
+  border-radius: var(--radius-lg);
+  padding: 14px 18px;
+  margin-bottom: 4px;
+}
+
+.guide-intro-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.guide-intro-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.guide-step-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s ease;
+}
+
+.guide-step-card:hover {
+  border-color: var(--left-arm-primary);
+}
+
+.guide-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--left-arm-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.guide-step-content {
+  flex: 1;
+}
+
+.guide-step-heading {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.guide-step-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.guide-table-grid {
+  display: grid;
+  grid-template-columns: 160px 1.4fr 1.4fr;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  font-size: 13px;
+}
+
+.guide-grid-header {
+  background: var(--bg-surface-subtle);
+  font-weight: 700;
+  color: var(--text-primary);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.guide-grid-cell {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color-subtle);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  line-height: 1.4;
+}
+
+.guide-grid-cell.font-bold {
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--bg-surface-subtle);
+}
+
+.guide-info-card {
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+
+.guide-mode-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.guide-mode-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.guide-mode-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.guide-mode-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.guide-features-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.guide-feature-item {
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+
+.guide-feature-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.guide-feature-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.guide-kbd {
+  padding: 2px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  background: var(--bg-surface-subtle);
+  text-align: center;
+  font-size: 12px;
+  box-shadow: var(--shadow-sm);
+}
+

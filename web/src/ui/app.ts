@@ -165,6 +165,14 @@ export class App {
 
     // Bind Keyboard shortcuts
     this.bindKeyboardShortcuts();
+
+    // Automatically pop up operation guide for first-time visitors
+    const hasSeenGuide = localStorage.getItem('srs_7r_guide_viewed');
+    if (!hasSeenGuide) {
+      setTimeout(() => {
+        this.helpDialog.open();
+      }, 300);
+    }
   }
 
   private syncAllViews(): void {

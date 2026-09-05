@@ -166,14 +166,16 @@ body {
 .brand-icon {
   width: 26px;
   height: 26px;
-  background: linear-gradient(135deg, var(--left-arm-primary), var(--right-arm-primary));
+  background: var(--text-primary);
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-size: 14px;
+  color: var(--bg-surface);
+  font-size: 13px;
   font-weight: 800;
+  font-family: var(--font-mono);
+  box-shadow: var(--shadow-sm);
 }
 
 .status-indicator {
@@ -227,12 +229,16 @@ body {
 /* Control Dock (Right) */
 .control-dock {
   width: 440px;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
   background-color: var(--bg-surface);
   border-left: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   z-index: 10;
   flex-shrink: 0;
+  overflow: hidden;
   transition: width 0.2s ease;
 }
 
@@ -249,6 +255,7 @@ body {
   padding: 10px 16px;
   border-bottom: 1px solid var(--border-color);
   background-color: var(--bg-surface-subtle);
+  flex-shrink: 0;
 }
 
 .segmented-nav {
@@ -292,8 +299,10 @@ body {
 
 .dock-scroll-area {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding: 14px 16px;
+  overflow-x: hidden;
+  padding: 14px 16px 32px 16px;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -668,6 +677,147 @@ body {
 .jog-key:active {
   background-color: var(--left-arm-light);
   transform: scale(0.96);
+}
+
+.arm-card.right-arm .jog-key:hover {
+  border-color: var(--right-arm-primary);
+}
+
+.arm-card.right-arm .jog-key:active {
+  background-color: var(--right-arm-light);
+}
+
+/* Delta Panel Container */
+.delta-panel-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.delta-container-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.delta-arm-tabs {
+  display: flex;
+  background-color: var(--bg-surface-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 3px;
+  gap: 3px;
+}
+
+.delta-tab-btn {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.delta-tab-btn:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.delta-tab-btn.active {
+  background-color: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.delta-tab-btn.active.left {
+  color: var(--left-arm-primary);
+}
+
+.delta-tab-btn.active.right {
+  color: var(--right-arm-primary);
+}
+
+.tab-indicator {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.tab-indicator.left {
+  background-color: var(--left-arm-primary);
+}
+
+.tab-indicator.right {
+  background-color: var(--right-arm-primary);
+}
+
+.delta-step-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.delta-step-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.delta-step-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.delta-step-badge {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-surface-subtle);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.delta-step-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.delta-cards-scroll-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.delta-instant-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--status-success);
+  background-color: var(--status-success-bg);
+  border: 1px solid var(--status-success-border);
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
 }
 
 /* =========================================================

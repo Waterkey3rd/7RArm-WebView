@@ -20,3 +20,5 @@ web/dist/
 # Native local build output
 deploy_ik_native.dll
 *.pdb
+
+/native/build/

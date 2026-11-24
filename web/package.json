@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build && vite build --config vite.config.lib.ts",
     "build:app": "vite build",
     "build:lib": "vite build --config vite.config.lib.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "dev:teach": "vite --host 127.0.0.1 --port 5182 --strictPort --open /?teach"
   },
   "dependencies": {
     "@cortex-js/compute-engine": "^0.30.2",

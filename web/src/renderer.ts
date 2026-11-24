@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { ArmState, Side } from './types';
+import type { Preview } from './teach';
 import { SIDES } from './types';
 import type { DeployIK } from './wasm';
 
@@ -37,6 +38,12 @@ export class ArmRenderer {
   private grid: THREE.GridHelper;
   private baseMesh: THREE.Mesh;
   private disposed = false;
+  private teachLines: THREE.Line<THREE.BufferGeometry, THREE.LineBasicMaterial>[] = [];
+  private teachActive = false;
+  private teachPoints: THREE.Vector3[] = [];
+  private pickDown?: { x: number; y: number };
+  private teachSelection?: THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial>;
+  onPickTeachFrame?: (index: number, toggleSelection: boolean) => void;
 
   private targetCamPos = new THREE.Vector3();
   private targetCamTarget = new THREE.Vector3();
@@ -64,10 +71,10 @@ export class ArmRenderer {
     // Blender-style Navigation Controls:
     // MMB: Rotate (Orbit) | Shift + MMB: Pan | Ctrl + MMB / Wheel: Zoom (Dolly)
     // Alt + LMB: Trackpad Emulate 3-Button Mouse (Rotate) | Alt + Shift + LMB: Pan | Alt + Ctrl + LMB: Zoom
-    // LMB: Disabled for camera rotation (reserved for interactions)
+    // LMB: Rotate; a click selects a HostLink teaching frame
     // RMB: Pan (fallback convenient pan)
     this.controls.mouseButtons = {
-      LEFT: -1 as any,
+      LEFT: THREE.MOUSE.ROTATE,
       MIDDLE: THREE.MOUSE.ROTATE,
       RIGHT: THREE.MOUSE.PAN,
     };
@@ -92,7 +99,7 @@ export class ArmRenderer {
               this.controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
             }
           } else {
-            this.controls.mouseButtons.LEFT = -1 as any;
+            this.controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
           }
         }
 
@@ -108,6 +115,28 @@ export class ArmRenderer {
       },
       { capture: true },
     );
+
+    this.renderer.domElement.addEventListener('pointerdown', (event) => {
+      if (event.button === 0) this.pickDown = { x: event.clientX, y: event.clientY };
+    });
+    this.renderer.domElement.addEventListener('pointercancel', () => { this.pickDown = undefined; });
+    this.renderer.domElement.addEventListener('pointerup', (event) => {
+      const origin = this.pickDown;
+      this.pickDown = undefined;
+      if (!this.teachActive || event.button !== 0 || !origin ||
+          Math.hypot(event.clientX - origin.x, event.clientY - origin.y) > 4) return;
+      const bounds = this.renderer.domElement.getBoundingClientRect();
+      let distance = 14;
+      let selected = -1;
+      this.teachPoints.forEach((point, i) => {
+        const screen = point.clone().project(this.camera);
+        const x = bounds.left + (screen.x + 1) * bounds.width / 2;
+        const y = bounds.top + (1 - screen.y) * bounds.height / 2;
+        const next = Math.hypot(x - event.clientX, y - event.clientY);
+        if (next < distance) { distance = next; selected = i; }
+      });
+      if (selected >= 0) this.onPickTeachFrame?.(selected, event.ctrlKey || event.metaKey || event.shiftKey);
+    });
 
     // Lights
     this.hemiLight = new THREE.HemisphereLight(0xffffff, 0xd0d7de, 2.4);
@@ -337,6 +366,96 @@ export class ArmRenderer {
     return nowVisible;
   }
 
+  setTeachPaths(preview: Preview, start: number, end: number, selected: ReadonlySet<number>): void {
+    this.removeTeachPaths();
+    const project = (point: [number, number, number, number, ...unknown[]]) =>
+      new THREE.Vector3(point[1], point[2], point[3]).multiplyScalar(1000);
+    this.teachPoints = preview.recorded.map(project);
+    for (const [points, color] of [
+      [this.teachPoints, 0x64748b],
+      [preview.planned.map(project), 0x08916f],
+      [this.teachPoints.slice(start, end + 1), 0xf78e13],
+    ] as const) {
+      if (points.length < 2) continue;
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const material = new THREE.LineBasicMaterial({ color });
+      const line = new THREE.Line(geometry, material);
+      this.teachLines.push(line);
+      this.scene.add(line);
+    }
+    this.setTeachSelection(selected);
+  }
+
+  setTeachSelection(selected: ReadonlySet<number>): void {
+    if (this.teachSelection) {
+      this.scene.remove(this.teachSelection);
+      this.teachSelection.geometry.dispose();
+      this.teachSelection.material.dispose();
+      this.teachSelection = undefined;
+    }
+    const points = [...selected].flatMap((i) => this.teachPoints[i] ? [this.teachPoints[i]] : []);
+    if (!points.length) return;
+    this.teachSelection = new THREE.Points(
+      new THREE.BufferGeometry().setFromPoints(points),
+      new THREE.PointsMaterial({ color: 0xf14367, size: 7, sizeAttenuation: false, depthTest: false }),
+    );
+    this.teachSelection.renderOrder = 11;
+    this.scene.add(this.teachSelection);
+  }
+
+  private removeTeachPaths(): void {
+    for (const line of this.teachLines) {
+      this.scene.remove(line);
+      line.geometry.dispose();
+      line.material.dispose();
+    }
+    this.teachLines = [];
+    this.teachPoints = [];
+    this.setTeachSelection(new Set());
+  }
+
+  clearTeach(): void {
+    this.teachActive = false;
+    this.removeTeachPaths();
+    for (const side of SIDES) this.arms[side].group.visible = true;
+  }
+
+  updateTeach(side: Side, model: Preview, q: number[], pitch: number): void {
+    this.teachActive = true;
+    for (const id of SIDES) this.arms[id].group.visible = id === side;
+    const meshes = this.arms[side];
+    const pitchAxis = new THREE.Vector3(0, 1, 0);
+    const screws = model.model.map((row) => {
+      const axis = new THREE.Vector3(row[0], row[1], row[2]);
+      return { axis, pivot: axis.clone().cross(new THREE.Vector3(row[3], row[4], row[5])) };
+    });
+    const transform = (value: number[], last: number, direction = false) => {
+      const point = new THREE.Vector3(value[0], value[1], value[2]);
+      for (let i = last; i >= 0; i--) {
+        const { axis, pivot } = screws[i];
+        if (!direction) point.sub(pivot);
+        point.applyAxisAngle(axis, q[i]);
+        if (!direction) point.add(pivot);
+      }
+      point.applyAxisAngle(pitchAxis, -pitch);
+      return direction ? point : point.multiplyScalar(1000);
+    };
+    const positions = model.model.map((joint, i) => transform(joint.slice(6, 9), i));
+    const tcp = transform(model.tcpHome, 6);
+    positions.push(tcp);
+    for (let i = 0; i < 7; i++) {
+      const center = positions[i];
+      meshes.joints[i].position.copy(center);
+      meshes.axes[i].position.copy(center);
+      meshes.axes[i].setDirection(transform(model.model[i], i - 1, true).normalize());
+      this.placeCylinder(meshes.links[i], center, positions[i + 1]);
+    }
+    meshes.tool.position.copy(tcp);
+    const [x, y, z] = model.tcpBasis.map((basis) => transform(basis, 6, true));
+    meshes.tool.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z));
+    this.render();
+  }
+
   update(state: ArmState): void {
     for (const side of SIDES) {
       const chain = this.ik.chain(side, state[side]);
@@ -388,6 +507,7 @@ export class ArmRenderer {
   dispose(): void {
     this.disposed = true;
     this.resizeObserver.disconnect();
+    this.removeTeachPaths();
     this.renderer.dispose();
     this.controls.dispose();
     if (this.renderer.domElement.parentElement) {

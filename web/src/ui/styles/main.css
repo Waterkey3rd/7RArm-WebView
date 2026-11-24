@@ -1084,3 +1084,46 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
 }
+
+/* HostLink teaching mode uses the existing viewport and timeline dock. */
+.control-dock[hidden], .timeline-dock[hidden], .teach-dock[hidden],
+.viewport-overlay-top-left[hidden], .teach-fields [hidden] { display: none; }
+#btn-top-teach[aria-pressed="true"] { border-color: var(--border-focus); color: var(--left-arm-primary); }
+.teach-dock { width: 340px; flex: 0 0 340px; overflow: auto; padding: 14px; border-left: 1px solid var(--border-color); background: var(--bg-surface); display: flex; flex-direction: column; gap: 10px; }
+.teach-dock h2, .teach-dock h3, .teach-dock p { margin: 0; }
+.teach-dock h2 { font-size: 17px; } .teach-dock h3 { font-size: 14px; }
+.teach-dock summary { cursor: pointer; }
+.teach-dock details input { width: 100%; margin: 5px 0; }
+.teach-row, .teach-range { display: flex; align-items: center; gap: 8px; }
+.teach-row input[type=file] { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.teach-row label:focus-within { outline: 2px solid var(--border-focus); }
+.teach-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; align-items: end; }
+.teach-fields label { font-size: 12px; }
+.teach-fields select, .teach-fields input[type=number] { width: 100%; }
+.teach-joints { display: grid; gap: 3px; }
+.teach-joints label { display: grid; grid-template-columns: 24px 1fr 58px; gap: 6px; align-items: center; font-size: 12px; }
+.teach-joints output { text-align: right; font-family: var(--font-mono); }
+.teach-timeline { min-height: 94px; height: auto; }
+.teach-timeline .timeline-slider { flex: 1; min-width: 50px; }
+.teach-range { padding: 4px 18px 10px; }
+.teach-range input { width: 90px; }
+.teach-band { position: relative; flex: 1; min-width: 60px; margin: 0 16px; height: 16px; background: var(--border-color); border-radius: 4px; }
+.teach-selected { position: absolute; top: 0; height: 100%; background: #f6ad5888; }
+.teach-band button { position: absolute; width: 17px; height: 24px; top: -4px; padding: 0; touch-action: none; color: #492c13; background: #f4bc77; border: 1px solid #b4773f; border-radius: 4px; cursor: ew-resize; }
+.teach-band button[data-teach=from] { transform: translateX(-100%); }
+.teach-band button:disabled { display: none; }
+.teach-dock [role=status] { font-size: 12px; }
+.teach-dock [data-error=true] { color: var(--status-danger); }
+@media(max-width: 720px) { .teach-dock { width: 230px; flex-basis: 230px; } .teach-range { flex-wrap: wrap; } }
+
+.teach-edit-actions { justify-content: flex-end; padding-top: 0; }
+
+.teach-batch { flex-wrap: wrap; }
+.teach-marks { position: absolute; inset: 0; pointer-events: none; }
+.teach-marks span { position: absolute; bottom: 1px; height: 4px; min-width: 4px; border-radius: 2px; background: #f14367; }
+.teach-waypoint-dialog { width: min(420px, 94vw); margin: auto; padding: 18px; color: var(--text-primary); background: var(--bg-panel, var(--bg-surface, Canvas)); border: 1px solid var(--border-color); border-radius: 10px; }
+.teach-waypoint-dialog::backdrop { background: #15213788; }
+.teach-waypoint-dialog form { display: grid; gap: 12px; }
+.teach-waypoint-dialog h2 { font-size: 16px; }
+.teach-waypoint-dialog label { display: grid; gap: 4px; }
+.teach-waypoint-dialog p { color: var(--status-danger); }

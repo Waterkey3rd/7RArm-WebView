@@ -10,6 +10,7 @@ import { IoDialog } from './components/io-dialog';
 import { OperationLogDialog } from './components/operation-log-dialog';
 import { TimelineDock } from './components/timeline';
 import { showToast } from './components/toast';
+import { TeachDock } from './components/teach-dock';
 import { TopBar } from './components/top-bar';
 import { TrajectoryDialog } from './components/trajectory-dialog';
 import { ViewportHud } from './components/viewport-hud';
@@ -20,6 +21,7 @@ export class App {
   private viewportHud!: ViewportHud;
   private controlPanel!: ControlPanel;
   private timeline!: TimelineDock;
+  private teach!: TeachDock;
 
   private trajectoryDialog!: TrajectoryDialog;
   private historyDialog!: HistoryDialog;
@@ -61,10 +63,11 @@ export class App {
 
     // Setup TopBar
     this.topBar = new TopBar({
-      onLoadDemo: () => this.loadDemoSequence(),
-      onOpenTrajectory: () => this.trajectoryDialog.open(),
-      onOpenHistory: () => this.operationLogDialog.open(),
-      onOpenIO: () => this.ioDialog.open(),
+      onTeach: () => this.setTeach(!this.teach.visible),
+      onLoadDemo: () => { this.setTeach(false); void this.loadDemoSequence(); },
+      onOpenTrajectory: () => { this.setTeach(false); this.trajectoryDialog.open(); },
+      onOpenHistory: () => { this.setTeach(false); this.operationLogDialog.open(); },
+      onOpenIO: () => { this.setTeach(false); this.ioDialog.open(); },
       onToggleTheme: () => this.toggleTheme(),
       onOpenHelp: () => this.helpDialog.open(),
     });
@@ -122,6 +125,8 @@ export class App {
       onDeleteKeypoint: (index) => this.deleteKeypoint(index),
     });
 
+    this.teach = new TeachDock(workspace, root, this.renderer);
+
     // Dialogs
     this.trajectoryDialog = new TrajectoryDialog(this.controller, (generated) => {
       const firstGeneratedIndex = this.controller.history.length - generated.length;
@@ -163,19 +168,34 @@ export class App {
     // Initial render sync
     this.syncAllViews();
 
+    if (new URLSearchParams(location.search).has('teach')) this.setTeach(true);
+
     // Bind Keyboard shortcuts
     this.bindKeyboardShortcuts();
 
     // Automatically pop up operation guide for first-time visitors
     const hasSeenGuide = localStorage.getItem('srs_7r_guide_viewed');
-    if (!hasSeenGuide) {
+    if (!hasSeenGuide && !this.teach.visible) {
       setTimeout(() => {
         this.helpDialog.open();
       }, 300);
     }
   }
 
+  private setTeach(active: boolean): void {
+    if (active === this.teach.visible) return;
+    this.stopPlayback();
+    this.isAnimating = false;
+    cancelAnimationFrame(this.animationRafId);
+    this.teach.show(active);
+    this.controlPanel.element.hidden = this.timeline.element.hidden = active;
+    this.viewportHud.element.querySelector<HTMLElement>('.viewport-overlay-top-left')!.hidden = active;
+    this.topBar.element.querySelector('#btn-top-teach')?.setAttribute('aria-pressed', String(active));
+    if (!active) this.syncAllViews();
+  }
+
   private syncAllViews(): void {
+    if (this.teach.visible) return;
     const cur = this.controller.current;
     this.renderer.update(cur);
     this.viewportHud.update(cur);
@@ -486,6 +506,7 @@ export class App {
   // =========================================================
   private bindKeyboardShortcuts(): void {
     window.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (this.teach.visible) return;
       // If typing in input or textarea, skip global shortcuts
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName)) {
         if (e.key === 'Escape') {

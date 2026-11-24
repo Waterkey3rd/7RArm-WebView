@@ -1,6 +1,7 @@
 import { ICONS } from '../icons';
 
 export interface TopBarCallbacks {
+  onTeach: () => void;
   onLoadDemo: () => void;
   onOpenTrajectory: () => void;
   onOpenHistory: () => void;
@@ -30,6 +31,7 @@ export class TopBar {
       </div>
 
       <div class="top-bar-right">
+        <button class="btn btn-secondary btn-sm" id="btn-top-teach" aria-pressed="false">HostLink 示教</button>
         <button class="btn btn-secondary btn-sm" id="btn-top-demo" title="载入预置实机动作序列">
           <span class="btn-icon-slot">${ICONS.DEMO}</span>
           <span>载入演示动作</span>
@@ -57,6 +59,7 @@ export class TopBar {
 
     this.themeBtn = this.element.querySelector('#btn-top-theme') as HTMLButtonElement;
 
+    this.element.querySelector('#btn-top-teach')?.addEventListener('click', () => this.callbacks.onTeach());
     this.element.querySelector('#btn-top-demo')?.addEventListener('click', () => this.callbacks.onLoadDemo());
     this.element.querySelector('#btn-top-trajectory')?.addEventListener('click', () => this.callbacks.onOpenTrajectory());
     this.element.querySelector('#btn-top-history')?.addEventListener('click', () => this.callbacks.onOpenHistory());
